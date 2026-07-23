@@ -4,18 +4,18 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://iamjk.site"),
   title: {
-    default: "JK de Guzman | Personal archive",
+    default: "JK de Guzman | A personal field guide",
     template: "%s | JK de Guzman",
   },
   description:
-    "A personal website for JK de Guzman in Marikina, Philippines: faith, language, technology, books, and the questions he keeps coming back to.",
+    "A personal field guide to JK de Guzman: a systems-minded learner, English teacher, Christian, and curious human in Marikina, Philippines.",
   alternates: { canonical: "https://iamjk.site" },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     url: "https://iamjk.site",
-    title: "JK de Guzman | Personal archive",
+    title: "JK de Guzman | A personal field guide",
     description:
       "Faith, language, technology, books, and the questions JK keeps coming back to.",
     siteName: "iamjk.site",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "JK de Guzman | Personal archive",
+    title: "JK de Guzman | A personal field guide",
     description:
       "Faith, language, technology, books, and the questions JK keeps coming back to.",
     images: ["/og.png"],
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#17191b",
+  themeColor: "#050505",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

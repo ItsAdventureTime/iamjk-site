@@ -20,11 +20,13 @@ test("server-renders the personal site", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Personal archive \| JK de Guzman<\/title>/i);
-  assert.match(html, /I&#x27;m <span>JK\.<\/span>/i);
+  assert.match(html, /<title>JK de Guzman \| A personal field guide \| JK de Guzman<\/title>/i);
+  assert.match(html, /A person is a <em>collection<\/em> of connections\./i);
   assert.match(html, /Language/i);
-  assert.match(html, /Technology/i);
-  assert.match(html, /What I&#x27;m into right now\./i);
+  assert.match(html, /Systems/i);
+  assert.match(html, /CliftonStrengths/i);
+  assert.match(html, /November 21 · Scorpio/i);
+  assert.match(html, /og\.png/i);
   assert.match(html, /Skip to content/i);
   assert.match(html, /<html lang="en-US">/i);
   assert.match(html, /aria-label="Primary navigation"/i);
@@ -35,6 +37,7 @@ test("server-renders the personal site", async () => {
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 
   const favicon = await readFile(new URL("../public/favicon.svg", import.meta.url), "utf8");
-  assert.match(favicon, /#17191B/i);
+  assert.match(favicon, /#050505/i);
+  assert.match(favicon, /#F4F2EF/i);
   assert.doesNotMatch(favicon, /68C4FF|0C79D8|2E9EFF/i);
 });
