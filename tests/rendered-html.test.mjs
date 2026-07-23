@@ -20,11 +20,11 @@ test("server-renders the personal site", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>A personal corner of the internet \| JK de Guzman<\/title>/i);
-  assert.match(html, /Hi, I&#x27;m <span>JK\.<\/span>/i);
-  assert.match(html, /Language &amp; connection/i);
-  assert.match(html, /Faith &amp; questions/i);
-  assert.match(html, /What&#x27;s on my desk\./i);
+  assert.match(html, /<title>Personal archive \| JK de Guzman<\/title>/i);
+  assert.match(html, /No single <span>lane\.<\/span>/i);
+  assert.match(html, /Language/i);
+  assert.match(html, /Conviction/i);
+  assert.match(html, /What&#x27;s on the desk\./i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|SkeletonPreview/i);
 
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
