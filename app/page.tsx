@@ -1,158 +1,148 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "JK de Guzman | Systems, infrastructure, and clear thinking",
+  title: "A personal corner of the internet",
   description:
-    "The personal site of Juan Karlo de Guzman, an AI infrastructure engineer, educator, and founder-operator based in the Philippines.",
+    "A personal corner of the internet belonging to Juan Karlo “JK” de Guzman: a curious learner, teacher, builder, reader, and Christian from the Philippines.",
 };
 
-const disciplines = [
+const threads = [
   {
     number: "01",
-    title: "AI infrastructure",
-    body: "Self-hosted LLM systems, GPU inference, automation, and the Linux layers that make them dependable.",
-    tags: ["LLMOps", "GPU inference", "Containers"],
+    title: "Learning in public",
+    body: "I like taking things apart until the pieces start making sense. Lately that has meant systems, AI, Linux, and a lot of patient note-taking.",
+    color: "terracotta",
   },
   {
     number: "02",
-    title: "Language & learning",
-    body: "Practical English education that makes room for confidence, context, and the real work people need to do.",
-    tags: ["ESL", "Pronunciation", "Communication"],
+    title: "Language & connection",
+    body: "Teaching English has taught me to notice the small distance between knowing a word and feeling confident enough to use it.",
+    color: "olive",
   },
   {
     number: "03",
-    title: "Operations & systems",
-    body: "Clearer handoffs, better documentation, and calm execution across technical and human workflows.",
-    tags: ["Automation", "Project work", "Documentation"],
+    title: "Faith & questions",
+    body: "Christian faith, theology, grace, and the kind of questions that become more honest when they are given time.",
+    color: "blue",
+  },
+  {
+    number: "04",
+    title: "Small things with weight",
+    body: "Books with margins, useful stationery, thoughtful design, and making ordinary systems feel a little more humane.",
+    color: "mustard",
   },
 ];
 
-const method = [
-  ["01", "Deploy", "Put the system in the real world."],
-  ["02", "Observe", "Read the logs and watch the edges."],
-  ["03", "Isolate", "Find the boundary where the assumption breaks."],
-  ["04", "Document", "Leave the next person a map, not a mystery."],
+const nowItems = [
+  ["making", "A home for my thoughts on the web"],
+  ["learning", "How ideas, people, and systems connect"],
+  ["teaching", "Practical language for real conversations"],
+  ["returning to", "Good questions, good books, and quiet mornings"],
 ];
 
 export default function Home() {
   return (
-    <main>
+    <main id="top" className="site-shell">
       <header className="site-header shell">
         <a className="wordmark" href="#top" aria-label="JK home">
           <span className="wordmark-mark">JK</span>
-          <span className="wordmark-type">de Guzman</span>
+          <span className="wordmark-copy">personal notes</span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#work">Work</a>
-          <a href="#method">Method</a>
-          <a className="nav-contact" href="#contact">
-            Say hello <span aria-hidden="true">↗</span>
-          </a>
+          <a href="#about">About</a>
+          <a href="#threads">Threads</a>
+          <a href="#now">Now</a>
+          <a className="nav-button" href="#contact">Say hello</a>
         </nav>
       </header>
 
-      <div id="top" className="shell page-grid">
+      <div className="shell">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow"><span className="eyebrow-dot" /> Systems / Communication / Curiosity</p>
-            <h1 id="hero-title">
-              I build <em>calm</em> systems for complicated work.
-            </h1>
-            <p className="hero-intro">
-              I&apos;m JK, an AI infrastructure engineer, educator, and founder-operator. I work at the seam between dependable technology and clear human communication.
-            </p>
-            <div className="hero-actions">
-              <a className="button button-primary" href="#work">Explore the work <span aria-hidden="true">↓</span></a>
-              <a className="text-link" href="#contact">Start a conversation <span aria-hidden="true">↗</span></a>
-            </div>
+            <p className="kicker"><span className="kicker-mark" /> A personal website · Marikina, Philippines</p>
+            <h1 id="hero-title">Hi, I&apos;m <span>JK.</span></h1>
+            <p className="hero-lede">This is a small corner of the internet for the things that make me, me.</p>
+            <p className="hero-body">I&apos;m a curious person who learns across boundaries: language and theology, teaching and building, ideas and the everyday life where they become useful.</p>
+            <a className="ink-link" href="#about">Come in, have a look <span aria-hidden="true">↘</span></a>
           </div>
 
-          <div className="hero-art" aria-label="A systems field note showing layered infrastructure and an observation log">
-            <div className="art-topline"><span>FIELD NOTE / 001</span><span>MARIKINA · PH</span></div>
-            <div className="art-core">
-              <div className="orbit orbit-one" />
-              <div className="orbit orbit-two" />
-              <div className="core-glow" />
-              <div className="core-label">observe<br /><strong>the system</strong></div>
-              <span className="signal signal-one" />
-              <span className="signal signal-two" />
-              <span className="signal signal-three" />
+          <div className="hero-collage" aria-label="An abstract paper collage representing JK">
+            <div className="collage-card collage-card-back" />
+            <div className="collage-card collage-card-front">
+              <div className="portrait-sun" />
+              <div className="portrait-arch"><span>J</span><strong>K</strong></div>
+              <span className="portrait-caption">a life in progress</span>
+              <span className="portrait-date">1988 → ∞</span>
             </div>
-            <div className="art-log">
-              <div><span className="log-prompt">$</span> inspect --assumptions</div>
-              <div className="log-muted">layers found: <b>05</b></div>
-              <div className="log-muted">failure mode: <b className="log-accent">isolated</b></div>
-              <div className="log-status"><span /> system steady</div>
+            <div className="collage-note">
+              <span>hello</span>
+              <small>glad you&apos;re here</small>
             </div>
-            <span className="art-index">01—04</span>
+            <div className="collage-stamp">PH<br /><b>∞</b></div>
           </div>
         </section>
 
-        <section className="signal-strip" aria-label="Current focus">
-          <span>Current focus</span>
-          <strong>AI infrastructure / DevOps / LLMOps</strong>
-          <span className="strip-rule" />
-          <span>Based in</span>
-          <strong>Marikina City, Philippines</strong>
+        <section id="about" className="about-section section-rule" aria-labelledby="about-title">
+          <div className="section-label">01 / A little about me</div>
+          <div className="about-copy">
+            <h2 id="about-title">I&apos;m not just one thing.</h2>
+            <p>My life makes more sense as a collection of threads than as a single title. I care about understanding how things work, helping people find their voice, and staying awake to the questions underneath the obvious ones.</p>
+            <p>Some days that looks like teaching. Some days it looks like reading, troubleshooting, writing, praying, or building a small system that makes tomorrow easier. I like the overlap.</p>
+            <div className="about-signature">— JK</div>
+          </div>
         </section>
 
-        <section id="work" className="section work-section" aria-labelledby="work-title">
-          <div className="section-heading">
-            <p className="eyebrow">01 / The intersection</p>
-            <h2 id="work-title">Different disciplines.<br /><em>One operating system.</em></h2>
+        <section id="threads" className="threads-section" aria-labelledby="threads-title">
+          <div className="section-intro">
+            <div className="section-label">02 / The threads</div>
+            <h2 id="threads-title">A few things I keep coming back to.</h2>
           </div>
-          <div className="discipline-grid">
-            {disciplines.map((item) => (
-              <article className="discipline-card" key={item.number}>
-                <div className="card-number">{item.number}</div>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-                <div className="tag-row">
-                  {item.tags.map((tag) => <span key={tag}>{tag}</span>)}
-                </div>
+          <div className="thread-grid">
+            {threads.map((thread) => (
+              <article className={`thread-card thread-card-${thread.color}`} key={thread.number}>
+                <div className="thread-topline"><span>{thread.number}</span><span className="thread-dot" aria-hidden="true" /></div>
+                <h3>{thread.title}</h3>
+                <p>{thread.body}</p>
+                <span className="thread-arrow" aria-hidden="true">↗</span>
               </article>
             ))}
           </div>
         </section>
 
-        <section id="method" className="section method-section" aria-labelledby="method-title">
-          <div className="method-intro">
-            <p className="eyebrow">02 / The working model</p>
-            <h2 id="method-title">Reverse-engineering is a <em>way of seeing.</em></h2>
-            <p>I learn by doing the work for real: deploy, break an assumption, inspect what happened, and fix the underlying cause. The result is usually simpler than the first idea.</p>
+        <section id="now" className="now-section section-rule" aria-labelledby="now-title">
+          <div className="now-heading">
+            <div className="section-label">03 / At the moment</div>
+            <h2 id="now-title">What&apos;s on my desk.</h2>
+            <p className="now-updated">Updated July 2026 · give or take</p>
           </div>
-          <ol className="method-list">
-            {method.map(([number, title, body]) => (
-              <li key={number}>
-                <span className="method-number">{number}</span>
-                <span className="method-title">{title}</span>
-                <span className="method-body">{body}</span>
-              </li>
+          <div className="now-list">
+            {nowItems.map(([label, value]) => (
+              <div className="now-row" key={label}>
+                <span className="now-label">{label}</span>
+                <span className="now-value">{value}</span>
+              </div>
             ))}
-          </ol>
+          </div>
         </section>
 
-        <section className="note-section" aria-label="A personal note">
-          <div className="note-pin" aria-hidden="true" />
-          <p className="eyebrow">A note from the desk</p>
-          <blockquote>“The goal is not to make complexity disappear. It is to make the boundaries visible enough that people can work with it.”</blockquote>
-          <p className="note-signoff">— JK</p>
+        <section className="quote-section" aria-label="A personal note">
+          <span className="quote-mark" aria-hidden="true">“</span>
+          <blockquote>Pay attention to what makes you more human.</blockquote>
+          <p>That&apos;s usually where the good work begins.</p>
         </section>
 
         <section id="contact" className="contact-section" aria-labelledby="contact-title">
-          <p className="eyebrow">03 / Open channel</p>
-          <div className="contact-layout">
-            <h2 id="contact-title">Let&apos;s make the next system <em>make sense.</em></h2>
-            <div className="contact-copy">
-              <p>I&apos;m interested in thoughtful technical work, useful collaborations, and conversations where the details matter.</p>
-              <a className="button button-light" href="mailto:hello@iamjk.site">Email JK <span aria-hidden="true">↗</span></a>
-            </div>
-          </div>
+          <div className="contact-doodle" aria-hidden="true"><span /><span /><span /></div>
+          <div className="section-label">04 / Open door</div>
+          <h2 id="contact-title">If you found your way here, say hello.</h2>
+          <p>I&apos;m always glad to meet a thoughtful person, hear a good question, or trade notes about something worth caring about.</p>
+          <a className="button button-dark" href="mailto:hello@iamjk.site">Write to JK <span aria-hidden="true">↗</span></a>
         </section>
 
         <footer className="site-footer">
           <span>© 2026 Juan Karlo de Guzman</span>
-          <span>Built with intent · iamjk.site</span>
+          <span>Made with care · iamjk.site</span>
+          <a href="#top">Back to top ↑</a>
         </footer>
       </div>
     </main>
