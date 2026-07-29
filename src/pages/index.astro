@@ -1,0 +1,552 @@
+---
+import "../../app/globals.css";
+
+const strengths = [
+  ["01", "Maximizer", "I keep asking how a good thing could become a better one."],
+  ["02", "Connectedness", "I notice the threads between people, ideas, systems, and the bigger picture."],
+  ["03", "Input", "I collect books, notes, tools, questions, and anything worth returning to."],
+  ["04", "Belief", "Clear values make decisions steadier, especially when things get complicated."],
+  ["05", "Individualization", "I pay attention to what makes a person distinct and what helps them do their best work."],
+];
+
+const interests = [
+  { number: "01", title: "Faith", className: "faith", body: "I grew up Catholic, then became an evangelical born-again Christian in 2016. Around 2020 I went deeper into theology, and by 2022–2023 I had embraced a Reformed, Calvinist lens." },
+  { number: "02", title: "Language", className: "language", body: "I teach English with a practical, conversational bias. I care about pronunciation, clear writing, and the moment a learner realizes they can finally say the thing." },
+  { number: "03", title: "Systems", className: "systems", body: "Linux, AI infrastructure, browsers, phones, networks, containers, and the satisfying moment when the logs finally explain what happened." },
+  { number: "04", title: "Ideas", className: "ideas", body: "Theology, psychology, science, philosophy, visual design, business systems, and films that leave a door open in your mind." },
+];
+
+const siteUrl = "https://iamjk.site";
+const pageTitle = "JK de Guzman | A personal field guide";
+const pageDescription = "A personal field guide to JK de Guzman: faith, language, systems, technology, and the questions behind how things work.";
+---
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080909" />
+    <meta name="description" content={pageDescription} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={siteUrl} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content="Faith, language, technology, books, and the questions JK keeps coming back to." />
+    <meta property="og:site_name" content="iamjk.site" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content="Faith, language, technology, books, and the questions JK keeps coming back to." />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <canvas class="world-canvas" aria-hidden="true"></canvas>
+    <div class="world-readout" aria-hidden="true">
+      <span class="world-readout-kicker">LIVE FIELD / <span data-world-index>01</span></span>
+      <strong data-world-label>PERSON</strong>
+      <span class="world-readout-line"></span>
+      <span data-world-detail>INPUT / CONNECTION / MEANING</span>
+    </div>
+    <main id="main-content" class="site-shell">
+      <header class="site-header" aria-label="Site header">
+        <a class="brand" href="#top" aria-label="JK de Guzman home">
+          <span class="brand-mark">JK</span>
+          <span class="brand-name">Juan Karlo de Guzman</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="#about">About</a>
+          <a class="nav-hide-mobile" href="#interests">Interests</a>
+          <a class="nav-hide-mobile" href="#field-notes">Field notes</a>
+          <a href="#stack">Stack</a>
+          <a class="nav-cta" href="#contact">Say hello <span aria-hidden="true">↗</span></a>
+        </nav>
+      </header>
+
+      <section id="top" class="hero section-frame" data-world-section="person" aria-labelledby="hero-title">
+        <div class="hero-copy" data-reveal="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Personal field guide / Philippines</p>
+          <h1 id="hero-title">A person is a <em>collection</em> of connections.</h1>
+          <p class="hero-deck">I’m JK. I teach, troubleshoot, read, build, and keep following the threads between things.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#about">Start here <span aria-hidden="true">↓</span></a>
+            <a class="quiet-link" href="#stack">See the current stack <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+
+        <div class="signal-wrap" data-reveal="hero-signal" aria-hidden="true">
+          <div class="signal-visual">
+            <span class="signal-visual-axis signal-visual-axis-x"></span>
+            <span class="signal-visual-axis signal-visual-axis-y"></span>
+            <span class="signal-visual-orbit signal-visual-orbit-one"></span>
+            <span class="signal-visual-orbit signal-visual-orbit-two"></span>
+            <span class="signal-visual-orbit signal-visual-orbit-three"></span>
+            <span class="signal-visual-particle signal-visual-particle-one"></span>
+            <span class="signal-visual-particle signal-visual-particle-two"></span>
+            <span class="signal-visual-particle signal-visual-particle-three"></span>
+            <span class="signal-visual-particle signal-visual-particle-four"></span>
+            <span class="signal-visual-particle signal-visual-particle-five"></span>
+            <span class="signal-visual-core"></span>
+          </div>
+          <span class="signal-caption signal-caption-top">LIVE FIELD / PERSON</span>
+          <span class="signal-caption signal-caption-bottom">MOVE / SCROLL / FOLLOW</span>
+        </div>
+
+        <div class="hero-footer" aria-hidden="true">
+          <span>SCROLL TO EXPLORE</span>
+          <span class="hero-line"></span>
+          <span>001 / 007</span>
+        </div>
+      </section>
+
+      <section id="about" class="about section-frame" data-world-section="faith" aria-labelledby="about-title">
+        <div class="section-intro">
+          <p class="section-index">01 / About</p>
+          <p class="section-note">A little context</p>
+        </div>
+        <div class="section-scene section-scene-faith" aria-hidden="true">
+          <span class="scene-ring scene-ring-one"></span><span class="scene-ring scene-ring-two"></span><span class="scene-cross scene-cross-vertical"></span><span class="scene-cross scene-cross-horizontal"></span><span class="scene-node scene-node-center"></span>
+        </div>
+        <div class="about-grid" data-reveal="about-copy">
+          <h2 id="about-title">Hello, I’m <em>JK.</em></h2>
+          <div class="about-copy readable-zone">
+            <p class="lead-copy">I’m Juan Karlo de Guzman, usually just JK. I’m from the Philippines, and I move between technology, communication, education, operations, theology, and design.</p>
+            <p>I’m drawn to things with layers. A Linux system. A difficult paragraph. A church tradition. A person’s particular way of seeing the world. I like taking something apart carefully, understanding what each piece does, then putting it back together so it is clearer and more useful.</p>
+            <p>English and Filipino are part of my daily life, and Taglish is never far away. I teach English with a practical, conversational bias. I care about confidence, pronunciation, and the moment a learner realizes they can say the thing they were trying to say.</p>
+          </div>
+        </div>
+        <div class="about-facts readable-zone" data-reveal="about-facts" aria-label="A few facts about JK">
+          <div data-reveal="fact"><span>Based in</span><strong>Philippines</strong></div>
+          <div data-reveal="fact"><span>Speaks</span><strong>English / Filipino</strong></div>
+          <div data-reveal="fact"><span>Birthday</span><strong>November 21 · Scorpio</strong></div>
+          <div data-reveal="fact"><span>Chinese zodiac</span><strong>Dragon</strong></div>
+        </div>
+      </section>
+
+      <section id="interests" class="interests section-frame" data-world-section="language" aria-labelledby="interests-title">
+        <div class="section-intro">
+          <p class="section-index">02 / Interests</p>
+          <p class="section-note">The recurring subjects</p>
+        </div>
+        <div class="section-heading-row" data-reveal="interest-heading">
+          <h2 id="interests-title">The things I <em>come back to.</em></h2>
+          <p class="readable-zone">Not a finished list. More like a map of the questions that keep opening into other questions.</p>
+        </div>
+        <div class="section-scene section-scene-language" aria-hidden="true">
+          <span class="scene-wave scene-wave-one"></span><span class="scene-wave scene-wave-two"></span><span class="scene-wave scene-wave-three"></span><span class="scene-node scene-node-language"></span>
+        </div>
+        <div class="interest-grid">
+          {interests.map(({ number, title, className, body }) => (
+            <article class={`interest-card interest-card-${className}`} data-reveal="interest-card">
+              <div class={`interest-glyph glyph-${className}`} aria-hidden="true"><span></span><span></span><span></span></div>
+              <span class="card-number">{number}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+              <span class="card-arrow" aria-hidden="true">↗</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="field-notes" class="field-notes section-frame" data-world-section="systems" aria-labelledby="field-notes-title">
+        <div class="section-intro">
+          <p class="section-index">03 / Field notes</p>
+          <p class="section-note">How I tend to work</p>
+        </div>
+        <div class="section-scene section-scene-systems" aria-hidden="true">
+          <span class="scene-link scene-link-one"></span><span class="scene-link scene-link-two"></span><span class="scene-link scene-link-three"></span><span class="scene-node scene-node-one"></span><span class="scene-node scene-node-two"></span><span class="scene-node scene-node-three"></span><span class="scene-node scene-node-four"></span>
+        </div>
+        <div class="notes-grid" data-reveal="notes-grid">
+          <div class="readable-zone">
+            <h2 id="field-notes-title">I learn by <em>getting my hands on it.</em></h2>
+            <p class="notes-lede">Deploy it. Test the assumption. Read the logs. Find the boundary. Fix the underlying thing. Document what happened.</p>
+            <p>That loop works for infrastructure, a new browser, a teaching material, a design system, or a question I cannot stop thinking about. I prefer evidence to confident-sounding guesses, and I like explanations that survive contact with the real world.</p>
+          </div>
+          <ol class="process-list readable-zone" data-reveal="process-list" aria-label="JK’s learning loop">
+            <li data-reveal="process-item"><span>01</span><strong>See the whole system</strong><small>What is connected to what?</small></li>
+            <li data-reveal="process-item"><span>02</span><strong>Make the boundaries visible</strong><small>Where does state live? What can fail?</small></li>
+            <li data-reveal="process-item"><span>03</span><strong>Try the practical version</strong><small>Build a small thing and watch it behave.</small></li>
+            <li data-reveal="process-item"><span>04</span><strong>Leave a clearer trail</strong><small>Test, fix, explain, and make it reproducible.</small></li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="stack" class="stack-section section-frame" data-world-section="technology" aria-labelledby="stack-title">
+        <div class="section-intro">
+          <p class="section-index">04 / Current stack</p>
+          <p class="section-note">The tools around the questions</p>
+        </div>
+        <div class="section-scene section-scene-technology" aria-hidden="true">
+          <span class="scene-device scene-device-phone"></span><span class="scene-device scene-device-box"></span><span class="scene-device scene-device-screen"></span><span class="scene-device-line scene-device-line-one"></span><span class="scene-device-line scene-device-line-two"></span>
+        </div>
+        <div class="stack-grid" data-reveal="stack-grid">
+          <div class="stack-copy readable-zone">
+            <h2 id="stack-title">I got tired of things <em>just working.</em></h2>
+            <p class="stack-lede">I want to know why they work, what depends on what, and what happens when they break.</p>
+            <p>I was an Apple fanboy from 2013 onward. The ecosystem was polished, reliable, and increasingly closed. In May 2026, I moved toward Nothing Technology with a Nothing Phone (3) and CMF Buds Pro 2. It feels more open, more curious, and more like a system I can inspect.</p>
+            <p>My current Mac mini on macOS is still home base. I’m looking forward to a new laptop and mini PC running CachyOS and Fedora Kinoite with KDE. The direction is simple: understand the layers instead of hiding them.</p>
+            <div class="stack-tags" aria-label="JK’s technology interests">
+              <span>Nothing Phone (3)</span><span>CMF Buds Pro 2</span><span>CachyOS</span><span>Fedora Kinoite</span><span>KDE</span>
+            </div>
+          </div>
+          <div class="stack-terminal" aria-hidden="true">
+            <div class="stack-terminal-head"><span>FIELD NOTE 04</span><span>LIVE / SYSTEMS</span></div>
+            <div class="stack-terminal-body">
+              <div class="terminal-pulse"></div>
+              <div class="terminal-grid"></div>
+              <span class="terminal-label terminal-label-one">PHONE / OS</span>
+              <span class="terminal-label terminal-label-two">MINI PC / KDE</span>
+              <span class="terminal-label terminal-label-three">WHY / WHAT / HOW</span>
+              <span class="terminal-line terminal-line-one"></span>
+              <span class="terminal-line terminal-line-two"></span>
+              <span class="terminal-line terminal-line-three"></span>
+            </div>
+            <div class="stack-terminal-foot"><span>OPEN</span><span>INSPECT</span><span>UNDERSTAND</span></div>
+          </div>
+        </div>
+        <div class="stack-trace" data-reveal="stack-trace" aria-label="A simple map of JK’s current technology direction">
+          <div class="stack-trace-step"><span>01</span><strong>Polished ecosystem</strong><small>Useful, but increasingly opaque.</small></div>
+          <span class="trace-line" aria-hidden="true"></span>
+          <div class="stack-trace-step"><span>02</span><strong>Curious hardware</strong><small>Try the layer. Notice the tradeoffs.</small></div>
+          <span class="trace-line" aria-hidden="true"></span>
+          <div class="stack-trace-step"><span>03</span><strong>Inspectable systems</strong><small>Linux, KDE, logs, reasons.</small></div>
+        </div>
+      </section>
+
+      <section class="strengths section-frame" data-world-section="ideas" aria-labelledby="strengths-title">
+        <div class="section-intro">
+          <p class="section-index">05 / Five signals</p>
+          <p class="section-note">CliftonStrengths · top five</p>
+        </div>
+        <div class="section-heading-row" data-reveal="strength-heading">
+          <h2 id="strengths-title">A useful shorthand, <em>not a box.</em></h2>
+          <p class="readable-zone">These five themes describe some of the patterns I recognize in myself: improving, connecting, collecting, grounding, and noticing the individual.</p>
+        </div>
+        <div class="section-scene section-scene-ideas" aria-hidden="true">
+          <span class="scene-constellation-line scene-constellation-line-one"></span><span class="scene-constellation-line scene-constellation-line-two"></span><span class="scene-constellation-line scene-constellation-line-three"></span><span class="scene-constellation-node scene-constellation-node-one"></span><span class="scene-constellation-node scene-constellation-node-two"></span><span class="scene-constellation-node scene-constellation-node-three"></span><span class="scene-constellation-node scene-constellation-node-four"></span>
+        </div>
+        <div class="strength-list">
+          {strengths.map(([number, title, body]) => (
+            <article class="strength-row" data-reveal="strength-row">
+              <span class="strength-number">{number}</span>
+              <h3>{title}</h3>
+              <p class="strength-description readable-zone" data-reveal="strength-description">{body}</p>
+              <span class="strength-symbol" aria-hidden="true">+</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="details section-frame" data-world-section="detail" aria-labelledby="details-title">
+        <div class="section-intro">
+          <p class="section-index">06 / Small details</p>
+          <p class="section-note">The texture around the edges</p>
+        </div>
+        <div class="section-scene section-scene-detail" aria-hidden="true">
+          <span class="scene-detail-ring scene-detail-ring-one"></span><span class="scene-detail-ring scene-detail-ring-two"></span><span class="scene-detail-ring scene-detail-ring-three"></span><span class="scene-detail-grid"></span>
+        </div>
+        <div class="details-grid" data-reveal="details-grid">
+          <h2 id="details-title">A few things that make me <em>me.</em></h2>
+          <div class="detail-columns">
+            <ul class="readable-zone">
+              <li data-reveal="detail-item">Left-handed. Usually carrying a black 0.4 or 0.5 mm gel pen.</li>
+              <li data-reveal="detail-item">Drawn to modern, rounded typography and careful spacing.</li>
+              <li data-reveal="detail-item">Fond of early internet nostalgia and Netscape-era computing.</li>
+              <li data-reveal="detail-item">Likes privacy tools, browser-engine rabbit holes, and hardware comparisons.</li>
+            </ul>
+            <ul class="readable-zone">
+              <li data-reveal="detail-item">Reads theology, psychology, science, philosophy, and whatever makes me pause.</li>
+              <li data-reveal="detail-item">Keeps a Kindle Oasis nearby and still enjoys a good paper pad.</li>
+              <li data-reveal="detail-item">Favorite worlds include <em>Interstellar</em>, <em>Dark</em>, <em>Touch</em>, <em>Inception</em>, and <em>Angels &amp; Demons</em>.</li>
+              <li data-reveal="detail-item">Believes AI should assist people, not erase the value of human work.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="contact section-frame" data-world-section="contact" aria-labelledby="contact-title">
+        <p class="section-index" data-reveal="contact-index">07 / Contact</p>
+        <div class="section-scene section-scene-contact" aria-hidden="true">
+          <span class="scene-signal scene-signal-one"></span><span class="scene-signal scene-signal-two"></span><span class="scene-signal scene-signal-three"></span><span class="scene-signal-node"></span>
+        </div>
+        <h2 id="contact-title" data-reveal="contact-title">If one of these threads <em>crosses yours,</em> say hello.</h2>
+        <p class="contact-copy readable-zone" data-reveal="contact-copy">If you’d like to get in touch, look me up online. I’m not hard to find.</p>
+      </section>
+
+      <footer class="site-footer">
+        <span>© 2026 Juan Karlo de Guzman</span>
+        <span>iamjk.site / a personal field guide</span>
+        <a href="#top">Back to top ↑</a>
+      </footer>
+    </main>
+    <script>
+      document.documentElement.classList.add("js-ready");
+      const revealTargets = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal], .section-intro, .hero-actions, .hero-footer"));
+      const revealTarget = (element: HTMLElement) => element.classList.add("is-visible");
+      if ("IntersectionObserver" in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) revealTarget(entry.target as HTMLElement);
+          });
+        }, { rootMargin: "-10% 0px -12% 0px", threshold: 0.08 });
+        revealTargets.forEach((element) => revealObserver.observe(element));
+      } else {
+        revealTargets.forEach(revealTarget);
+      }
+
+      const canvas = document.querySelector<HTMLCanvasElement>(".world-canvas");
+      const readoutIndex = document.querySelector<HTMLElement>("[data-world-index]");
+      const readoutLabel = document.querySelector<HTMLElement>("[data-world-label]");
+      const readoutDetail = document.querySelector<HTMLElement>("[data-world-detail]");
+      const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const phases = [
+        { label: "PERSON", detail: "INPUT / CONNECTION / MEANING", color: "#efb36b" },
+        { label: "FAITH", detail: "CENTER / CONVICTION / PRACTICE", color: "#c8844a" },
+        { label: "LANGUAGE", detail: "SAY THE THING", color: "#9ec5c3" },
+        { label: "SYSTEMS", detail: "BOUNDARIES / LOGS / CAUSE", color: "#b9684d" },
+        { label: "TECHNOLOGY", detail: "OPEN / INSPECT / UNDERSTAND", color: "#88967e" },
+        { label: "IDEAS", detail: "COLLECT / CONNECT / RETURN", color: "#efb36b" },
+        { label: "DETAIL", detail: "NOTICE / REMEMBER / KEEP", color: "#88967e" },
+        { label: "CONTACT", detail: "FOLLOW THE TRAIL", color: "#9ec5c3" },
+      ];
+
+      const context = canvas?.getContext("2d");
+      const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-world-section]"));
+      let activeSectionIndex = 0;
+      if (canvas && context) {
+        document.querySelector<HTMLElement>(".signal-wrap")?.classList.add("is-enhanced");
+        let width = 0;
+        let height = 0;
+        let pixelRatio = 1;
+        let targetScroll = 0;
+        let currentScroll = 0;
+        let scrollProgress = 0;
+        let pointerX = 0;
+        let pointerY = 0;
+        let time = 0;
+        let lastFrame = 0;
+        const particles = Array.from({ length: 160 }, (_, index) => ({
+          angle: index * 2.39996,
+          radius: 0.22 + ((index * 47) % 73) / 100,
+          size: 1 + (index % 3) * 0.35,
+          phase: (index % 11) * 0.6,
+        }));
+
+        const resize = () => {
+          pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width * pixelRatio;
+          canvas.height = height * pixelRatio;
+          canvas.style.width = `${width}px`;
+          canvas.style.height = `${height}px`;
+          context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        };
+
+        const updateSectionState = () => {
+          if (sections.length === 0) return;
+          let nearestDistance = Number.POSITIVE_INFINITY;
+          let nearestIndex = 0;
+          sections.forEach((section, index) => {
+            const bounds = section.getBoundingClientRect();
+            const distance = Math.abs((bounds.top + bounds.height / 2) - height / 2);
+            const focus = Math.max(0, 1 - distance / Math.max(height * 0.85, 1));
+            section.style.setProperty("--section-focus", focus.toFixed(3));
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              nearestIndex = index;
+            }
+          });
+          activeSectionIndex = nearestIndex;
+          sections.forEach((section, index) => {
+            const current = index === nearestIndex;
+            section.classList.toggle("is-current", current);
+            section.querySelector<HTMLElement>(".section-scene")?.classList.toggle("is-current", current);
+          });
+        };
+
+        const updateReadout = () => {
+          const phaseIndex = Math.min(phases.length - 1, activeSectionIndex);
+          const phase = phases[phaseIndex];
+          if (readoutIndex) readoutIndex.textContent = String(phaseIndex + 1).padStart(2, "0");
+          if (readoutLabel) readoutLabel.textContent = phase.label;
+          if (readoutDetail) readoutDetail.textContent = phase.detail;
+        };
+
+        const drawLine = (x1: number, y1: number, x2: number, y2: number, color: string, alpha = 0.22, lineWidth = 1) => {
+          context.save();
+          context.globalAlpha = alpha;
+          context.strokeStyle = color;
+          context.lineWidth = lineWidth;
+          context.beginPath();
+          context.moveTo(x1, y1);
+          context.lineTo(x2, y2);
+          context.stroke();
+          context.restore();
+        };
+
+        const drawNode = (x: number, y: number, radius: number, color: string, alpha = 1) => {
+          context.save();
+          context.globalAlpha = alpha;
+          context.fillStyle = color;
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.fill();
+          context.restore();
+        };
+
+        const drawRoundRect = (x: number, y: number, rectWidth: number, rectHeight: number, radius: number, color: string, alpha = 0.55) => {
+          const safeRadius = Math.min(radius, rectWidth / 2, rectHeight / 2);
+          context.save();
+          context.globalAlpha = alpha;
+          context.strokeStyle = color;
+          context.lineWidth = 1;
+          context.beginPath();
+          context.moveTo(x + safeRadius, y);
+          context.lineTo(x + rectWidth - safeRadius, y);
+          context.arcTo(x + rectWidth, y, x + rectWidth, y + safeRadius, safeRadius);
+          context.lineTo(x + rectWidth, y + rectHeight - safeRadius);
+          context.arcTo(x + rectWidth, y + rectHeight, x + rectWidth - safeRadius, y + rectHeight, safeRadius);
+          context.lineTo(x + safeRadius, y + rectHeight);
+          context.arcTo(x, y + rectHeight, x, y + rectHeight - safeRadius, safeRadius);
+          context.lineTo(x, y + safeRadius);
+          context.arcTo(x, y, x + safeRadius, y, safeRadius);
+          context.stroke();
+          context.restore();
+        };
+
+        const drawScene = (timestamp: number) => {
+          const delta = Math.min((timestamp - lastFrame) / 1000, 0.05);
+          lastFrame = timestamp;
+          if (!motionQuery.matches) time += delta;
+          currentScroll += (targetScroll - currentScroll) * (motionQuery.matches ? 1 : 0.08);
+          const maxScroll = Math.max(1, document.documentElement.scrollHeight - height);
+          scrollProgress = Math.max(0, Math.min(1, currentScroll / maxScroll));
+          updateSectionState();
+          updateReadout();
+
+          context.clearRect(0, 0, width, height);
+          context.save();
+          const mobile = width < 700;
+          const mobileDriftX = mobile ? Math.sin(scrollProgress * Math.PI * 2.4) * width * 0.08 : 0;
+          const mobileDriftY = mobile ? Math.cos(scrollProgress * Math.PI * 1.8) * height * 0.05 : 0;
+          const centerX = mobile ? width * 0.72 + mobileDriftX : width * 0.7;
+          const centerY = mobile ? height * 0.46 + mobileDriftY : height * 0.49;
+          const base = Math.min(width, height) * (mobile ? 0.34 : 0.44);
+          const phaseIndex = Math.min(phases.length - 1, activeSectionIndex);
+          const activePhase = phases[phaseIndex];
+          const drift = motionQuery.matches ? 0 : time * 0.16;
+
+          context.translate(centerX + pointerX * 16, centerY + pointerY * 12);
+          context.rotate((scrollProgress - 0.5) * 0.22 + pointerX * 0.05);
+          drawLine(-base * 1.15, 0, base * 1.15, 0, "#f1eee8", 0.16);
+          drawLine(0, -base * 1.15, 0, base * 1.15, "#f1eee8", 0.16);
+
+          for (let index = 0; index < 4; index += 1) {
+            context.save();
+            context.rotate(drift * (index % 2 ? -0.65 : 0.8) + index * 0.75 + scrollProgress * 0.7);
+            context.globalAlpha = 0.24;
+            context.strokeStyle = index % 2 ? activePhase.color : "#9ec5c3";
+            context.lineWidth = 1;
+            context.beginPath();
+            context.ellipse(0, 0, base * (0.6 + index * 0.12), base * (0.22 + index * 0.09), 0, 0, Math.PI * 2);
+            context.stroke();
+            context.restore();
+          }
+
+          const visibleParticles = mobile ? 72 : 132;
+          for (let index = 0; index < visibleParticles; index += 1) {
+            const particle = particles[index];
+            const radius = base * (0.95 + 0.18 * Math.sin(time * 0.7 + particle.phase));
+            const angle = particle.angle + drift * (0.4 + (index % 3) * 0.07) + scrollProgress * 1.2;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius * 0.92;
+            const color = index % 5 === 0 ? "#efb36b" : index % 3 === 0 ? "#9ec5c3" : activePhase.color;
+            drawNode(x, y, particle.size, color, 0.48 + (index % 4) * 0.12);
+            if (index % 13 === 0) drawLine(0, 0, x, y, color, 0.12);
+          }
+
+          if (phaseIndex === 1) {
+            drawLine(0, -base * 0.36, 0, base * 0.36, activePhase.color, 0.7, 2);
+            drawLine(-base * 0.24, 0, base * 0.24, 0, activePhase.color, 0.7, 2);
+          } else if (phaseIndex === 2) {
+            for (let index = 0; index < 3; index += 1) {
+              context.save();
+              context.globalAlpha = 0.58 - index * 0.12;
+              context.strokeStyle = activePhase.color;
+              context.beginPath();
+              for (let point = -base * 0.72; point <= base * 0.72; point += 5) {
+                const waveY = Math.sin(point * 0.025 + time * 1.6 + index) * base * 0.08 + (index - 1) * base * 0.15;
+                if (point === -base * 0.72) context.moveTo(point, waveY); else context.lineTo(point, waveY);
+              }
+              context.stroke();
+              context.restore();
+            }
+          } else if (phaseIndex === 3) {
+            const nodes = Array.from({ length: 8 }, (_, index) => {
+              const angle = index * Math.PI * 2 / 8 + time * 0.12;
+              return [Math.cos(angle) * base * 0.48, Math.sin(angle) * base * 0.48];
+            });
+            nodes.forEach(([x, y], index) => {
+              drawLine(0, 0, x, y, activePhase.color, 0.22);
+              if (index > 0) drawLine(nodes[index - 1][0], nodes[index - 1][1], x, y, activePhase.color, 0.22);
+              drawNode(x, y, 4, activePhase.color, 0.85);
+            });
+          } else if (phaseIndex === 4) {
+            drawRoundRect(-base * 0.62, -base * 0.24, base * 0.32, base * 0.6, 14, activePhase.color);
+            drawRoundRect(base * 0.16, -base * 0.18, base * 0.5, base * 0.32, 12, activePhase.color);
+            drawRoundRect(base * 0.02, base * 0.28, base * 0.64, base * 0.14, 6, activePhase.color);
+            drawLine(-base * 0.52, base * 0.21, -base * 0.42, base * 0.21, activePhase.color, 0.8, 2);
+          } else if (phaseIndex === 5) {
+            const ideaNodes = [[-base * 0.38, -base * 0.2], [base * 0.02, -base * 0.42], [base * 0.43, -base * 0.1], [base * 0.2, base * 0.38], [-base * 0.28, base * 0.32]];
+            ideaNodes.forEach(([x, y], index) => {
+              const next = ideaNodes[(index + 1) % ideaNodes.length];
+              drawLine(x, y, next[0], next[1], activePhase.color, 0.35);
+              drawNode(x, y, 6, activePhase.color, 0.9);
+            });
+          } else if (phaseIndex === 6) {
+            for (let index = 1; index < 4; index += 1) {
+              context.save();
+              context.globalAlpha = 0.42 - index * 0.08;
+              context.strokeStyle = activePhase.color;
+              context.beginPath();
+              context.arc(0, 0, base * index * 0.19, -Math.PI * 0.8, Math.PI * 0.8);
+              context.stroke();
+              context.restore();
+            }
+          }
+
+          context.beginPath();
+          context.arc(0, 0, base * 0.09, 0, Math.PI * 2);
+          context.fillStyle = "#080909";
+          context.fill();
+          context.lineWidth = 1;
+          context.strokeStyle = "#f1eee8";
+          context.globalAlpha = 0.82;
+          context.stroke();
+          drawNode(0, 0, 4, activePhase.color, 0.95);
+          context.restore();
+          window.requestAnimationFrame(drawScene);
+        };
+
+        window.addEventListener("resize", resize, { passive: true });
+        document.addEventListener("scroll", () => { targetScroll = window.scrollY; }, { passive: true });
+        window.addEventListener("pointermove", (event) => {
+          pointerX = (event.clientX / width) - 0.5;
+          pointerY = (event.clientY / height) - 0.5;
+          document.documentElement.style.setProperty("--pointer-x", pointerX.toFixed(3));
+          document.documentElement.style.setProperty("--pointer-y", pointerY.toFixed(3));
+          document.documentElement.style.setProperty("--pointer-shift-x", `${(pointerX * 6).toFixed(2)}px`);
+          document.documentElement.style.setProperty("--pointer-shift-y", `${(pointerY * 5).toFixed(2)}px`);
+          document.documentElement.style.setProperty("--scene-shift-x", `${(pointerX * -10).toFixed(2)}px`);
+          document.documentElement.style.setProperty("--scene-shift-y", `${(pointerY * -10).toFixed(2)}px`);
+        }, { passive: true });
+        resize();
+        targetScroll = window.scrollY;
+        window.requestAnimationFrame(drawScene);
+      }
+    </script>
+  </body>
+</html>

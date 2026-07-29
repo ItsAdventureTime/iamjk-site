@@ -14,7 +14,8 @@
 # testing
 /coverage
 
-# next.js
+# framework output
+/.astro/
 /.next/
 /.vinext/
 /out/
