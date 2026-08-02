@@ -135,10 +135,11 @@ Before accepting a visual change:
 1. Run `pnpm run check`.
 2. Run `pnpm test`, which builds first and checks the rendered document.
 3. Confirm `dist/index.html` and `dist/_astro/*.js` are produced.
-4. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text.
-5. Check keyboard focus, reduced motion, and no-script behavior.
-6. Confirm no blur, backdrop blur, shadow, purple/violet palette drift, city-level location, age/year of birth, or email address has returned.
-7. Review the diff and keep the generated `dist/` output out of Git.
+4. Run the source and generated-output privacy scans in `SECURITY.md`.
+5. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text.
+6. Check keyboard focus, reduced motion, and no-script behavior.
+7. Confirm no blur, backdrop blur, shadow, purple/violet palette drift, city-level location, age/year of birth, or email address has returned.
+8. Review the diff and keep the generated `dist/` output out of Git.
 
 ## Implementation source
 

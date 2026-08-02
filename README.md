@@ -20,7 +20,8 @@ The repository includes `.openai/hosting.json` with a project ID and null D1/R2 
 - `src/pages/index.astro` — page structure, copy, metadata, Canvas 2D script, and section state.
 - `app/globals.css` — design tokens, responsive layout, motifs, surfaces, motion, and browser fallbacks.
 - `astro.config.mjs` — `output: "static"` and canonical site URL.
-- `tests/rendered-html.test.mjs` — build-output and design-invariant checks.
+- `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
+- `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
 - `public/` — static favicon and supporting assets.
 - `dist/` — generated release output; ignored by Git.
 
@@ -56,7 +57,7 @@ pnpm run check
 pnpm test
 ```
 
-The `test` script runs `astro build` before Node’s test runner checks `dist/index.html`. It verifies metadata, important copy, section motifs, the same-origin module, accessibility markers, sensitive-content exclusions, and the no-blur design constraints.
+The `test` script runs `astro build` before Node’s test runner checks `dist/index.html`. It verifies metadata, important copy, section motifs, the same-origin module, accessibility markers, sensitive-content exclusions, email-address exclusions, and the no-blur design constraints.
 
 For a production-style local check:
 
@@ -141,6 +142,10 @@ curl --fail --silent --show-error --head https://iamjk.site/_astro/ASSET_FROM_IN
 
 The temporary Caddy profile in the existing server configuration adds `X-Robots-Tag: noindex`. Remove its `import private_noindex` line when the site is ready for public search indexing.
 
+## Privacy and release scan
+
+The public site intentionally exposes no email address or `mailto:` link. Run the source and generated-output scans documented in [SECURITY.md](SECURITY.md) before every release. These scans complement GitHub Secret Protection and push protection; they do not replace review of Git history or rotation of a credential that was ever exposed.
+
 ## Content and design rules
 
 - Use American English (`en-US`) and a natural, conversational voice.
@@ -161,5 +166,7 @@ The temporary Caddy profile in the existing server configuration adds `X-Robots-
 - Caddy `file_server`: https://caddyserver.com/docs/caddyfile/directives/file_server
 - Caddy `header`: https://caddyserver.com/docs/caddyfile/directives/header
 - Caddy `encode`: https://caddyserver.com/docs/caddyfile/directives/encode
+- GitHub push protection: https://docs.github.com/en/code-security/concepts/secret-security/push-protection
+- 1Password SSH commit signing: https://www.1password.dev/ssh/git-commit-signing
 
-Review these sources again when changing the runtime, deployment model, or security policy.
+Review these sources again when changing the runtime, deployment model, security policy, or signing workflow.
