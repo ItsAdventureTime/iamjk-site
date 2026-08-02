@@ -22,7 +22,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(html, /stack-trace-step/i);
   assert.match(html, /Philippines/i);
   assert.doesNotMatch(html, /Marikina/i);
-  assert.doesNotMatch(html, /hello@iamjk\.site|mailto:/i);
+  const emailPattern = /\b[\w.%+-]+@[\w.-]+\.[A-Z]{2,}\b/i;
+  assert.doesNotMatch(html, emailPattern);
+  assert.doesNotMatch(html, /mailto:/i);
   assert.match(html, /Skip to content/i);
   assert.match(html, /<html lang="en-US">/i);
   assert.match(html, /aria-label="Primary navigation"/i);
