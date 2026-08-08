@@ -9,8 +9,18 @@ vps_path="${VPS_PATH:-/home/jk/iamjk-site}"
 pnpm_version="${PNPM_VERSION:-11.15.1}"
 release_image="${RELEASE_IMAGE:-localhost/iamjk-site:release}"
 release_bundle="$(mktemp -t iamjk-site-release.XXXXXX.tar)"
+ssh_control_dir="$(mktemp -d -t iamjk-site-ssh.XXXXXX)"
+ssh_control_path="$ssh_control_dir/control"
+ssh_target="$vps_user@$vps_host"
+ssh_options=(-o ControlMaster=auto -o ControlPersist=5m -o ControlPath="$ssh_control_path")
 remote_bundle="$vps_path/.iamjk-site-release.tar"
-trap 'rm -f "$release_bundle"' EXIT
+
+cleanup() {
+  ssh "${ssh_options[@]}" -O exit -- "$ssh_target" >/dev/null 2>&1 || true
+  rm -f "$release_bundle"
+  rmdir "$ssh_control_dir" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
 
 if [[ -z "$vps_host" ]]; then
   printf 'Set VPS_HOST before deploying.\n' >&2
@@ -42,12 +52,16 @@ podman run --rm \
 
 podman build --tag "$release_image" --file "$project_dir/Containerfile" "$project_dir"
 podman save --format oci-archive --output "$release_bundle" "$release_image"
-ssh -- "$vps_user@$vps_host" "mkdir -p '$vps_path'"
-rsync --archive --compress --human-readable --itemize-changes \
-  "$release_bundle" "$vps_user@$vps_host:$remote_bundle"
-ssh -- "$vps_user@$vps_host" \
+printf 'Opening authenticated SSH connection to %s...\n' "$ssh_target"
+ssh "${ssh_options[@]}" -MNf -- "$ssh_target"
+ssh "${ssh_options[@]}" -- "$ssh_target" "mkdir -p '$vps_path'"
+printf 'Uploading release archive (progress shown below)...\n'
+rsync --archive --human-readable --itemize-changes --info=progress2 --partial --timeout=60 \
+  -e "ssh ${ssh_options[*]}" \
+  "$release_bundle" "$ssh_target:$remote_bundle"
+ssh "${ssh_options[@]}" -- "$ssh_target" \
   "podman load --input '$remote_bundle' && rm -f '$remote_bundle' && systemctl --user daemon-reload && systemctl --user restart iamjk-site.service"
 
-ssh -- "$vps_user@$vps_host" bunny-purge
+ssh "${ssh_options[@]}" -- "$ssh_target" bunny-purge
 
 printf 'Deployment complete: %s@%s:%s\n' "$vps_user" "$vps_host" "$vps_path"
