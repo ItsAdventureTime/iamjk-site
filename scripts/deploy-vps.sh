@@ -8,6 +8,11 @@ vps_host="${VPS_HOST:-}"
 vps_path="${VPS_PATH:-/home/jk/iamjk-site}"
 pnpm_version="${PNPM_VERSION:-11.15.1}"
 release_image="${RELEASE_IMAGE:-localhost/iamjk-site:release}"
+quadlet_dir="${QUADLET_DIR:-/home/$vps_user/.config/containers/systemd/iamjk-site}"
+quadlet_file="$quadlet_dir/iamjk-site.container"
+caddy_config_path="${CADDY_CONFIG_PATH:-/home/$vps_user/caddy/conf/Caddyfile}"
+update_caddy="${UPDATE_CADDY:-1}"
+backup_stamp="$(date -u +%Y%m%d%H%M%S)"
 release_bundle="$(mktemp -t iamjk-site-release.XXXXXX.tar)"
 # macOS can reject ControlPath values longer than the Unix socket limit.
 # Keep this path short; %C still makes the socket unique per SSH destination.
@@ -56,7 +61,19 @@ podman build --tag "$release_image" --file "$project_dir/Containerfile" "$projec
 podman save --format oci-archive --output "$release_bundle" "$release_image"
 printf 'Opening authenticated SSH connection to %s...\n' "$ssh_target"
 ssh "${ssh_options[@]}" -MNf -- "$ssh_target"
-ssh "${ssh_options[@]}" -- "$ssh_target" "mkdir -p '$vps_path'"
+ssh "${ssh_options[@]}" -- "$ssh_target" \
+  "mkdir -p '$vps_path' '$quadlet_dir'"
+printf 'Installing/updating the application Quadlet with rsync...\n'
+rsync --archive --human-readable --itemize-changes \
+  -e "ssh ${ssh_options[*]}" \
+  "$project_dir/deploy/iamjk-site.container.example" "$ssh_target:$quadlet_file"
+ssh "${ssh_options[@]}" -- "$ssh_target" \
+  "for secret in iamjk-site_TURNSTILE_SECRET iamjk-site_resend-api-key iamjk-site_resend-from iamjk-site_resend-to; do podman secret inspect \"\$secret\" >/dev/null || { echo \"Missing Podman secret: \$secret\" >&2; exit 1; }; done"
+if [[ "$update_caddy" == "1" ]]; then
+  printf 'Updating the iamjk.site Caddy upstream...\n'
+  ssh "${ssh_options[@]}" -- "$ssh_target" \
+    "if grep -Fq 'reverse_proxy iamjk-site:4321' '$caddy_config_path'; then :; elif grep -Fq 'reverse_proxy 127.0.0.1:4321' '$caddy_config_path'; then cp '$caddy_config_path' '$caddy_config_path.before-iamjk-network-fix.$backup_stamp' && sed -i 's/reverse_proxy 127\\.0\\.0\\.1:4321/reverse_proxy iamjk-site:4321/' '$caddy_config_path'; else echo 'Could not find the expected iamjk.site reverse_proxy directive; set UPDATE_CADDY=0 and update Caddy manually.' >&2; exit 1; fi"
+fi
 printf 'Uploading release archive (progress shown below)...\n'
 rsync --archive --human-readable --itemize-changes --info=progress2 --partial --timeout=60 \
   -e "ssh ${ssh_options[*]}" \
@@ -67,6 +84,11 @@ ssh "${ssh_options[@]}" -- "$ssh_target" \
 printf 'Checking the running application container...\n'
 ssh "${ssh_options[@]}" -- "$ssh_target" \
   "podman exec iamjk-site node -e 'fetch(\"http://127.0.0.1:4321/\").then(async response => { const html = await response.text(); if (!response.ok || !html.includes(\"contact-form\")) process.exit(1); }).catch(() => process.exit(1))'"
+
+if [[ "$update_caddy" == "1" ]]; then
+  ssh "${ssh_options[@]}" -- "$ssh_target" \
+    "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && systemctl --user restart caddy.service"
+fi
 
 ssh "${ssh_options[@]}" -- "$ssh_target" bunny-purge
 

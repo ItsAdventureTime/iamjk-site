@@ -87,18 +87,12 @@ printf '%s' 'website@iamjk.site' | podman secret create iamjk-site_resend-from -
 printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
 ```
 
-Install `deploy/iamjk-site.container.example` as the user Quadlet
-`iamjk-site.container`, then reload and start it:
-
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now iamjk-site.service
-```
-
-The deployment helper builds the image, transfers an OCI archive, loads it on
-the VPS, and restarts only `iamjk-site.service`. Caddy should proxy
-`iamjk.site` to `127.0.0.1:4321` and retain the security headers described
-below. Do not expose port 4321 publicly.
+The single deployment helper installs or updates the application Quadlet in
+`~/.config/containers/systemd/iamjk-site/`, joins it to `caddy.network`,
+updates only the `iamjk.site` upstream in the existing Caddyfile, and restarts
+the rootless application and Caddy services. It does not replace the shared
+Caddyfile or change any other site. Caddy should proxy `iamjk.site` to
+`iamjk-site:4321` on the shared network. Do not expose port 4321 publicly.
 
 For a production-style local check:
 
@@ -172,6 +166,23 @@ copy CDN credentials to the local machine. After rsync succeeds, it runs:
 
 ~~~bash
 ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge
+~~~
+
+The helper is idempotent for both first application installation and later
+updates. It expects the existing rootless Caddy Quadlet, `caddy.network`, the
+four Podman secrets, and the VPS-side `bunny-purge` command to already exist.
+Set `UPDATE_CADDY=0` only when you intentionally manage the Caddy upstream
+yourself. Set `QUADLET_DIR` or `CADDY_CONFIG_PATH` when your VPS uses different
+paths:
+
+~~~bash
+UPDATE_CADDY=1 \
+QUADLET_DIR=/home/jk/.config/containers/systemd/iamjk-site \
+CADDY_CONFIG_PATH=/home/jk/caddy/conf/Caddyfile \
+VPS_HOST=YOUR_VPS_HOST \
+VPS_USER=jk \
+VPS_PATH=/home/jk/iamjk-site \
+./scripts/deploy-vps.sh
 ~~~
 
 Do not put Bunny API keys in the repository, shell history, or deployment
