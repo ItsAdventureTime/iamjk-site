@@ -1,6 +1,6 @@
 # Security and privacy guide
 
-**Reviewed:** 2026-08-03
+**Reviewed:** 2026-08-08
 **Scope:** public iamjk.site source, generated static output, and Git release workflow
 
 ## Public-content rules
@@ -62,6 +62,20 @@ does not replace, this project’s email/privacy scan.
 
 Review any push-protection alert instead of bypassing it automatically. A real
 credential must be rotated or revoked before the commit is republished.
+
+GitHub CLI is available for authenticated repository operations. Confirm the
+account before publishing, then use the normal signed Git commit flow:
+
+```bash
+gh auth status
+gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
+git push origin main
+```
+
+`gh auth setup-git` configures GitHub CLI credentials for Git transport; it does
+not create a cryptographic signature. Verification comes from the signed commit,
+the registered SSH signing public key, and the matching GitHub author email. Keep
+`commit.gpgsign=true` and the 1Password SSH signer configured.
 
 ## 1Password-signed Git
 

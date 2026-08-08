@@ -1,7 +1,7 @@
 # iamjk.site design guide
 
 **Status:** implementation reference for the current site
-**Reviewed:** 2026-07-30
+**Reviewed:** 2026-08-08
 **Audience:** future content, visual, and implementation changes
 
 iamjk.site is a personal field guide for Juan Karlo “JK” de Guzman. It is deliberately personal rather than a work portfolio: visitors should meet a person through his faith, language, systems curiosity, technology shifts, books, ideas, and practical way of learning.

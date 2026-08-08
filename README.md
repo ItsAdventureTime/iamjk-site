@@ -142,6 +142,24 @@ curl --fail --silent --show-error --head https://iamjk.site/_astro/ASSET_FROM_IN
 
 The temporary Caddy profile in the existing server configuration adds `X-Robots-Tag: noindex`. Remove its `import private_noindex` line when the site is ready for public search indexing.
 
+## GitHub CLI and verified releases
+
+Use GitHub CLI to confirm the authenticated account and repository before a
+remote operation. GitHub CLI authentication supplies repository access; it does
+not sign commits. The existing 1Password SSH signer and Git configuration create
+the signature that GitHub can display as verified after the public signing key
+and author email are registered on the account.
+
+```bash
+gh auth status
+gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
+git log -1 --show-signature
+git push origin main
+```
+
+See [SECURITY.md](SECURITY.md) for the full signing, privacy-scan, and
+push-protection checklist.
+
 ## Privacy and release scan
 
 The public site intentionally exposes no email address or `mailto:` link. Run the source and generated-output scans documented in [SECURITY.md](SECURITY.md) before every release. These scans complement GitHub Secret Protection and push protection; they do not replace review of Git history or rotation of a credential that was ever exposed.
@@ -168,5 +186,7 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Caddy `encode`: https://caddyserver.com/docs/caddyfile/directives/encode
 - GitHub push protection: https://docs.github.com/en/code-security/concepts/secret-security/push-protection
 - 1Password SSH commit signing: https://www.1password.dev/ssh/git-commit-signing
+- GitHub CLI manual: https://cli.github.com/manual/
+- GitHub CLI authentication: https://cli.github.com/manual/gh_auth
 
 Review these sources again when changing the runtime, deployment model, security policy, or signing workflow.
