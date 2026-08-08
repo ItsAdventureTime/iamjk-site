@@ -140,10 +140,12 @@ shell history.
 
 ## Deployment check
 
-The canonical release path runs tests on macOS through Podman, builds the
-standalone Node 24 Alpine image, transfers an OCI archive, loads it on the VPS,
-restarts the Quadlet service, and then invokes the VPS-side bunny-purge script
-over SSH. Run it from the repository root:
+The canonical release path runs tests on macOS through Podman, transfers a
+sanitized source build context to the VPS, builds the standalone Node 24 Alpine
+image natively on the VPS, restarts the Quadlet service, and then invokes the
+VPS-side bunny-purge script over SSH. The rsync exclusions keep `.env` files,
+private-key/certificate files, generated output, and local agent metadata out
+of the VPS build context. Run it from the repository root:
 
 ~~~bash
 cd ~/dev/iamjk-site

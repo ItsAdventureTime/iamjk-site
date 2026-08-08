@@ -109,8 +109,8 @@ The preferred release path runs on macOS:
 
 1. Podman runs the pinned Node and pnpm test pipeline in a disposable container.
 2. The helper starts the Podman machine when it is not running.
-3. Podman builds a standalone application image and transfers an OCI archive.
-4. SSH loads the image and restarts the VPS-side Quadlet service.
+3. rsync transfers a sanitized source build context to the VPS.
+4. Podman builds the application image natively on the VPS and restarts the Quadlet service.
 5. SSH invokes the VPS-side bunny-purge script only after the service restarts.
 
 Podman on macOS requires a virtual machine. Install it with Homebrew and
@@ -139,9 +139,10 @@ VPS_PATH=/home/jk/iamjk-site \
 ~~~
 
 The helper uses the pinned Node 24 Alpine image by default, installs the
-repository-pinned pnpm version inside the disposable container, runs the
-frozen-lockfile install and test pipeline, builds `iamjk-site:release`, and
-transfers it with rsync. The container mounts an ephemeral
+repository-pinned pnpm version inside the disposable container, and runs the
+frozen-lockfile install and test pipeline. It then transfers a sanitized build
+context with rsync and builds `iamjk-site:release` natively on the VPS. This
+avoids Apple Silicon-to-x86 image incompatibilities. The local test container mounts an ephemeral
 Linux-only node_modules tmpfs, so macOS host modules cannot trigger pnpm's
 non-interactive cleanup prompt. Alpine supplies sh, so the helper does not
 assume Bash. Override the image or pnpm version only when the project runtime
@@ -171,6 +172,9 @@ ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge
 The helper is idempotent for both first application installation and later
 updates. It expects the existing rootless Caddy Quadlet, `caddy.network`, the
 four Podman secrets, and the VPS-side `bunny-purge` command to already exist.
+The synced build context excludes Git metadata, agent metadata, generated files,
+dependency directories, `.env` files, and common private-key/certificate
+extensions. Podman secrets remain only on the VPS.
 Set `UPDATE_CADDY=0` only when you intentionally manage the Caddy upstream
 yourself. The helper recognizes both the explicit `iamjk-site` name and
 Quadlet’s generated default `systemd-iamjk-site`; set `APP_CONTAINER_NAME` if
@@ -207,8 +211,9 @@ podman build --tag localhost/iamjk-site:release --file Containerfile .
 
 ## Fedora CoreOS VPS runtime notes
 
-The macOS helper above is the canonical release path. The VPS receives an OCI
-image and runs it as the rootless Quadlet service described above. The
+The macOS helper above is the canonical release path. The VPS receives a
+sanitized source build context, builds its own native OCI image, and runs it as
+the rootless Quadlet service described above. The
 application Quadlet joins `caddy.network`, and Caddy proxies to the container
 name `iamjk-site:4321`. The loopback-published port is kept as a local
 diagnostic fallback; it is not the Caddy connection path.
