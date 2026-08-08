@@ -53,6 +53,7 @@ async function verifyTurnstile(token: string, request: Request, secretKey: strin
 }
 
 export const POST: APIRoute = async ({ request }) => {
+  const requestId = crypto.randomUUID();
   const origin = request.headers.get("origin");
   if (origin && !["https://iamjk.site", "https://www.iamjk.site"].includes(origin)) {
     return Response.json({ message: "Please submit the form normally." }, { status: 403 });
@@ -86,18 +87,28 @@ export const POST: APIRoute = async ({ request }) => {
     const apiKey = secret("RESEND_API_KEY");
     const from = secret("RESEND_FROM");
     const to = secret("RESEND_TO");
+    if (!validEmail(from) || !validEmail(to)) {
+      console.error("[contact] invalid Resend sender configuration", { requestId });
+      return Response.json({ message: `I couldn’t send that just now. Reference ${requestId.slice(0, 8)}.` }, { status: 503 });
+    }
     const replyTo = email || undefined;
     const emailBody = [`New message from iamjk.site`, ``, `Name: ${name}`, `Country: ${country}`, `Email: ${email || "Not provided"}`, `Mobile: ${mobile || "Not provided"}`, ``, message].join("\n");
     const resend = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json", "user-agent": "iamjk-site-contact/1.0" },
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json", "idempotency-key": requestId, "user-agent": "iamjk-site-contact/1.0" },
       body: JSON.stringify({ from, to: [to], reply_to: replyTo, subject: `New message from ${name}`, text: emailBody }),
       signal: AbortSignal.timeout(10_000),
     });
-    if (!resend.ok) return Response.json({ message: "The message could not be sent. Please try again later." }, { status: 502 });
+    if (!resend.ok) {
+      const details = await resend.json().catch(() => ({})) as { name?: string };
+      console.error("[contact] Resend rejected message", { requestId, status: resend.status, errorType: details.name || "unknown" });
+      return Response.json({ message: `I couldn’t send that just now. Reference ${requestId.slice(0, 8)}.` }, { status: 502 });
+    }
+    console.info("[contact] message accepted by Resend", { requestId });
     return Response.json({ message: "Thanks for writing. Your message has been sent privately." }, { status: 200 });
-  } catch {
-    return Response.json({ message: "The message could not be sent. Please try again later." }, { status: 503 });
+  } catch (error) {
+    console.error("[contact] submission failed", { requestId, errorType: error instanceof Error ? error.name : "unknown" });
+    return Response.json({ message: `I couldn’t send that just now. Reference ${requestId.slice(0, 8)}.` }, { status: 503 });
   }
 };
 

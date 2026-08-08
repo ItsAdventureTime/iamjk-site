@@ -25,7 +25,7 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(html, /data-action="turnstile-spin-v2"/i);
   assert.match(html, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js/i);
   assert.match(html, /Country or territory/i);
-  assert.match(html, /Leave an email or mobile number if you would like me to reply/i);
+  assert.match(html, /Want a reply\? Leave an email or mobile number/i);
   assert.match(html, /stack-trace-step/i);
   assert.match(html, /Philippines/i);
   assert.doesNotMatch(html, /Marikina|1988|depression|stroke survivor|Losartan|amlodipine/i);
@@ -64,6 +64,8 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(endpoint, /siteverify/);
   assert.match(endpoint, /result\.success === true/);
   assert.match(endpoint, /iamjk-site-contact/);
+  assert.match(endpoint, /idempotency-key/);
+  assert.match(endpoint, /requestId/);
   assert.doesNotMatch(endpoint, /website@iamjk\.site|hello@iamjk\.site/);
 
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

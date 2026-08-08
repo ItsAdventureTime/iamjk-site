@@ -66,7 +66,11 @@ each token at Cloudflare’s Siteverify endpoint before calling Resend. Tokens
 are single-use and short-lived. The endpoint also requires name, country, and
 message; caps field and request sizes; rejects a honeypot and implausibly fast
 submissions; checks same-origin requests; and throttles repeated attempts by
-client address.
+client address. Resend failures return a short reference instead of provider
+details. Server logs retain only that reference, the HTTP status, and a
+provider error type; they never retain message content, contact details, or
+credentials. Each delivery request also includes a unique Resend idempotency
+key.
 
 Create these secrets on the VPS and keep their values out of source control,
 container build arguments, logs, and shell history:
@@ -79,7 +83,8 @@ printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
 ```
 
 The Quadlet template maps these secrets to runtime-only environment variables.
-Do not publish port `4321`; Caddy should reverse-proxy to its loopback address.
+Do not publish port `4321`; Caddy should reverse-proxy to `iamjk-site:4321`
+over `caddy.network`.
 
 ## Git history
 

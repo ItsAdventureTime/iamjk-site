@@ -28,7 +28,7 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `deploy/Caddyfile.example` — reverse-proxy configuration for the Node application and Turnstile CSP.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
-- `scripts/deploy-vps.sh` — Podman build, rsync upload, and Bunny purge release helper.
+- `scripts/deploy-vps.sh` — local validation, sanitized rsync upload, native VPS Podman build, and Bunny purge release helper.
 - `public/` — the static favicon and intentionally used public assets.
 - `dist/` — generated release output; ignored by Git.
 
@@ -75,7 +75,10 @@ The browser receives only the public Turnstile site key. The server validates
 each single-use token at Cloudflare before calling Resend. The endpoint also
 enforces the required name, country, and message fields; caps input sizes;
 rejects the honeypot and fast submissions; checks same-origin requests; and
-throttles each forwarded client address.
+throttles each forwarded client address. Resend failures return a short
+reference to the visitor while the server logs only the reference, HTTP status,
+and provider error type; message content and credentials are never logged.
+Resend requests also carry an idempotency key.
 
 Create these Podman secrets on the VPS. Never place their values in source,
 the image, the Quadlet file, or shell history:

@@ -278,11 +278,11 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <div class="section-scene section-scene-contact" aria-hidden="true">
           <span class="scene-signal scene-signal-one"></span><span class="scene-signal scene-signal-two"></span><span class="scene-signal scene-signal-three"></span><span class="scene-signal-node"></span>
         </div>
-        <h2 id="contact-title" data-reveal="contact-title">If one of these threads <em>crosses yours,</em> say hello.</h2>
+        <h2 id="contact-title" data-reveal="contact-title">If you’d like to keep the conversation going, <em>say hello.</em></h2>
         <div class="contact-layout" data-reveal="contact-copy">
           <div class="contact-intro readable-zone">
-            <p class="contact-copy">If one of these threads crosses yours, write to me here. Email and mobile number are optional; leave at least one if you would like a reply.</p>
-            <p class="contact-privacy">Your message is sent privately to JK. Please do not include passwords, financial details, government IDs, or sensitive health information.</p>
+            <p class="contact-copy">Tell me a little about what’s on your mind. Email and mobile are optional, but I’ll need one if you’d like a reply.</p>
+            <p class="contact-privacy">I’ll use what you share only to read your message and reply. Please leave out passwords, payment details, government IDs, and private medical information.</p>
           </div>
           <form class="contact-form" action="/api/contact" method="post">
             <div class="contact-form-grid">
@@ -306,7 +306,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
                 <input name="mobile" type="tel" autocomplete="tel" maxlength="32" aria-describedby="reply-note" />
               </label>
             </div>
-            <p id="reply-note" class="contact-field-note">Leave an email or mobile number if you would like me to reply.</p>
+            <p id="reply-note" class="contact-field-note">Want a reply? Leave an email or mobile number.</p>
             <label>
               <span>Message <b aria-hidden="true">*</b></span>
               <textarea name="message" rows="7" required maxlength="5000"></textarea>
@@ -315,7 +315,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
             <input name="startedAt" type="hidden" data-contact-started />
             <input class="contact-trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
             <div class="contact-form-footer">
-              <p class="contact-consent">By sending this message, you agree that JK may use the details you provide to review and reply to you.</p>
+              <p class="contact-consent">I’ll use these details only to review your message and reply.</p>
               <button class="primary-link contact-submit" type="submit">Send message <span aria-hidden="true">↗</span></button>
             </div>
             <p class="contact-status" role="status" aria-live="polite"></p>
@@ -339,7 +339,8 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
       contactForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!contactStatus) return;
-        contactStatus.textContent = "Checking your message…";
+        contactStatus.className = "contact-status is-pending";
+        contactStatus.textContent = "Checking that everything looks good…";
         const submitButton = contactForm.querySelector<HTMLButtonElement>("button[type=submit]");
         if (submitButton) submitButton.disabled = true;
         try {
@@ -349,13 +350,15 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
             headers: { Accept: "application/json" },
           });
           const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.message || "The message could not be sent.");
+          if (!response.ok) throw new Error(result.message || "I couldn’t send that just now. Please try again in a moment.");
           contactForm.reset();
           if (contactStarted) contactStarted.value = String(Date.now());
-          contactStatus.textContent = "Thanks for writing. Your message has been sent privately.";
+          contactStatus.className = "contact-status is-success";
+          contactStatus.textContent = "Thanks — your message is on its way.";
           window.turnstile?.reset();
         } catch (error) {
-          contactStatus.textContent = error instanceof Error ? error.message : "The message could not be sent. Please try again.";
+          contactStatus.className = "contact-status is-error";
+          contactStatus.textContent = error instanceof Error ? error.message : "I couldn’t send that just now. Please try again in a moment.";
           window.turnstile?.reset();
         } finally {
           if (submitButton) submitButton.disabled = false;
