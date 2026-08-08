@@ -10,5 +10,5 @@ iamjk.site, www.iamjk.site {
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
 
-    reverse_proxy 127.0.0.1:4321
+    reverse_proxy iamjk-site:4321
 }

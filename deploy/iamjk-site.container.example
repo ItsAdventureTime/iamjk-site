@@ -5,6 +5,7 @@ After=network-online.target
 [Container]
 Image=localhost/iamjk-site:release
 ContainerName=iamjk-site
+Network=caddy.network
 PublishPort=127.0.0.1:4321:4321
 Secret=iamjk-site_TURNSTILE_SECRET,type=env,target=TURNSTILE_SECRET
 Secret=iamjk-site_resend-api-key,type=env,target=RESEND_API_KEY

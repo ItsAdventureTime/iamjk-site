@@ -195,14 +195,19 @@ podman build --tag localhost/iamjk-site:release --file Containerfile .
 ## Fedora CoreOS VPS runtime notes
 
 The macOS helper above is the canonical release path. The VPS receives an OCI
-image and runs it as the rootless Quadlet service described above. Caddy must
-reach only the loopback-published application port.
+image and runs it as the rootless Quadlet service described above. The
+application Quadlet joins `caddy.network`, and Caddy proxies to the container
+name `iamjk-site:4321`. The loopback-published port is kept as a local
+diagnostic fallback; it is not the Caddy connection path.
 
 ## Caddy configuration
 
-Caddy reverse-proxies the Astro Node server. Do not leave the old `file_server`
-site active, because it will continue serving the previous static HTML instead
-of the container. The complete example is in `deploy/Caddyfile.example`.
+Caddy runs as its own rootless Podman container. Both Quadlets must join
+`caddy.network`; `127.0.0.1:4321` would point back to the Caddy container, not
+the application. Caddy therefore reverse-proxies `iamjk-site:4321`. Do not
+leave the old `file_server` site active, because it will continue serving the
+previous static HTML instead of the container. The complete example is in
+`deploy/Caddyfile.example`.
 Turnstile requires its browser script and frame origin in the policy; the form
 also needs same-origin API requests. Do not use a policy that sets `script-src 'none'` or blocks
 `challenges.cloudflare.com`.
@@ -218,7 +223,7 @@ Use a dedicated site snippet like this, adapting the shared security headers to 
         >Cache-Control "public, max-age=300, must-revalidate"
     }
 
-    reverse_proxy 127.0.0.1:4321
+    reverse_proxy iamjk-site:4321
 }
 
 iamjk.site {
