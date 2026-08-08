@@ -101,7 +101,7 @@ Motion is part of the page’s structure, not decoration:
 
 - The fixed canvas draws the shared orbit/network field.
 - The active section changes the field’s phase and label.
-- The readout follows the section crossing a fixed viewport focus line, with a visible-section fallback; it must not infer state from section centers alone.
+- The readout follows the section crossing a fixed viewport focus line, with a visible-section fallback; it uses the visible section’s own number, title, and note while the canvas keeps a separate thematic phase.
 - Pointer movement adds restrained parallax on capable devices.
 - Scrolling changes the scene target and reveal state; section geometry is sampled only when scroll or resize marks it dirty.
 - `IntersectionObserver` adds content reveals without relying on experimental scroll-timeline APIs.

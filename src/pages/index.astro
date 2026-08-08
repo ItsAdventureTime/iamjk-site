@@ -65,7 +65,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </nav>
       </header>
 
-      <section id="top" class="hero section-frame" data-world-section="person" aria-labelledby="hero-title">
+      <section id="top" class="hero section-frame" data-world-section="person" data-world-index="01" data-world-readout="PERSON" data-world-detail="INPUT / CONNECTION / MEANING" aria-labelledby="hero-title">
         <div class="hero-copy" data-reveal="hero-copy">
           <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Personal field guide / Philippines</p>
           <h1 id="hero-title">A person is a <em>collection</em> of connections.</h1>
@@ -101,7 +101,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="about" class="about section-frame" data-world-section="faith" aria-labelledby="about-title">
+      <section id="about" class="about section-frame" data-world-section="faith" data-world-index="01" data-world-readout="ABOUT" data-world-detail="A LITTLE CONTEXT" aria-labelledby="about-title">
         <div class="section-intro">
           <p class="section-index">01 / About</p>
           <p class="section-note">A little context</p>
@@ -126,7 +126,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="interests" class="interests section-frame" data-world-section="language" aria-labelledby="interests-title">
+      <section id="interests" class="interests section-frame" data-world-section="language" data-world-index="02" data-world-readout="INTERESTS" data-world-detail="THE RECURRING SUBJECTS" aria-labelledby="interests-title">
         <div class="section-intro">
           <p class="section-index">02 / Interests</p>
           <p class="section-note">The recurring subjects</p>
@@ -151,7 +151,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="field-notes" class="field-notes section-frame" data-world-section="systems" aria-labelledby="field-notes-title">
+      <section id="field-notes" class="field-notes section-frame" data-world-section="systems" data-world-index="03" data-world-readout="FIELD NOTES" data-world-detail="HOW I TEND TO WORK" aria-labelledby="field-notes-title">
         <div class="section-intro">
           <p class="section-index">03 / Field notes</p>
           <p class="section-note">How I tend to work</p>
@@ -175,7 +175,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="stack" class="stack-section section-frame" data-world-section="technology" aria-labelledby="stack-title">
+      <section id="stack" class="stack-section section-frame" data-world-section="technology" data-world-index="04" data-world-readout="STACK" data-world-detail="THE TOOLS AROUND THE QUESTIONS" aria-labelledby="stack-title">
         <div class="section-intro">
           <p class="section-index">04 / Current stack</p>
           <p class="section-note">The tools around the questions</p>
@@ -217,7 +217,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section class="strengths section-frame" data-world-section="ideas" aria-labelledby="strengths-title">
+      <section class="strengths section-frame" data-world-section="ideas" data-world-index="05" data-world-readout="FIVE SIGNALS" data-world-detail="CLIFTONSTRENGTHS / TOP FIVE" aria-labelledby="strengths-title">
         <div class="section-intro">
           <p class="section-index">05 / Five signals</p>
           <p class="section-note">CliftonStrengths · top five</p>
@@ -241,7 +241,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section class="details section-frame" data-world-section="detail" aria-labelledby="details-title">
+      <section class="details section-frame" data-world-section="detail" data-world-index="06" data-world-readout="SMALL DETAILS" data-world-detail="THE TEXTURE AROUND THE EDGES" aria-labelledby="details-title">
         <div class="section-intro">
           <p class="section-index">06 / Small details</p>
           <p class="section-note">The texture around the edges</p>
@@ -268,7 +268,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="contact" class="contact section-frame" data-world-section="contact" aria-labelledby="contact-title">
+      <section id="contact" class="contact section-frame" data-world-section="contact" data-world-index="07" data-world-readout="CONTACT" data-world-detail="FOLLOW THE TRAIL" aria-labelledby="contact-title">
         <p class="section-index" data-reveal="contact-index">07 / Contact</p>
         <div class="section-scene section-scene-contact" aria-hidden="true">
           <span class="scene-signal scene-signal-one"></span><span class="scene-signal scene-signal-two"></span><span class="scene-signal scene-signal-three"></span><span class="scene-signal-node"></span>
@@ -326,7 +326,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         let currentScroll = 0;
         let scrollProgress = 0;
         let sectionStateDirty = true;
-        let lastReadoutIndex = -1;
+        let lastReadoutKey = "";
         let pointerX = 0;
         let pointerY = 0;
         let time = 0;
@@ -391,12 +391,16 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
 
         const updateReadout = () => {
           const phaseIndex = Math.min(phases.length - 1, activeSectionIndex);
-          if (phaseIndex === lastReadoutIndex) return;
-          lastReadoutIndex = phaseIndex;
-          const phase = phases[phaseIndex];
-          if (readoutIndex) readoutIndex.textContent = String(phaseIndex + 1).padStart(2, "0");
-          if (readoutLabel) readoutLabel.textContent = phase.label;
-          if (readoutDetail) readoutDetail.textContent = phase.detail;
+          const section = sections[activeSectionIndex];
+          const readoutNumber = section?.dataset.worldIndex ?? String(phaseIndex + 1).padStart(2, "0");
+          const readoutTitle = section?.dataset.worldReadout ?? phases[phaseIndex].label;
+          const readoutDescription = section?.dataset.worldDetail ?? phases[phaseIndex].detail;
+          const readoutKey = `${readoutNumber}:${readoutTitle}:${readoutDescription}`;
+          if (readoutKey === lastReadoutKey) return;
+          lastReadoutKey = readoutKey;
+          if (readoutIndex) readoutIndex.textContent = readoutNumber;
+          if (readoutLabel) readoutLabel.textContent = readoutTitle;
+          if (readoutDetail) readoutDetail.textContent = readoutDescription;
         };
 
         const drawLine = (x1: number, y1: number, x2: number, y2: number, color: string, alpha = 0.22, lineWidth = 1) => {

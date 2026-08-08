@@ -48,6 +48,10 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(source, /let pageVisible = !document\.hidden/);
   assert.match(source, /if \(!pageVisible \|\| animationFrameId !== 0\) return/);
   assert.match(source, /document\.addEventListener\("visibilitychange"/);
+  assert.match(source, /data-world-readout="ABOUT"/);
+  assert.match(source, /data-world-detail="A LITTLE CONTEXT"/);
+  assert.match(source, /const readoutNumber = section\?\.dataset\.worldIndex/);
+  assert.match(source, /const readoutTitle = section\?\.dataset\.worldReadout/);
 
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
