@@ -172,8 +172,10 @@ The helper is idempotent for both first application installation and later
 updates. It expects the existing rootless Caddy Quadlet, `caddy.network`, the
 four Podman secrets, and the VPS-side `bunny-purge` command to already exist.
 Set `UPDATE_CADDY=0` only when you intentionally manage the Caddy upstream
-yourself. Set `QUADLET_DIR` or `CADDY_CONFIG_PATH` when your VPS uses different
-paths:
+yourself. The helper recognizes both the explicit `iamjk-site` name and
+Quadlet’s generated default `systemd-iamjk-site`; set `APP_CONTAINER_NAME` if
+your existing service uses another name. Set `QUADLET_DIR` or
+`CADDY_CONFIG_PATH` when your VPS uses different paths:
 
 ~~~bash
 UPDATE_CADDY=1 \

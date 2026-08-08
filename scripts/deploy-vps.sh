@@ -12,6 +12,7 @@ quadlet_dir="${QUADLET_DIR:-/home/$vps_user/.config/containers/systemd/iamjk-sit
 quadlet_file="$quadlet_dir/iamjk-site.container"
 caddy_config_path="${CADDY_CONFIG_PATH:-/home/$vps_user/caddy/conf/Caddyfile}"
 update_caddy="${UPDATE_CADDY:-1}"
+app_container_name="${APP_CONTAINER_NAME:-}"
 backup_stamp="$(date -u +%Y%m%d%H%M%S)"
 release_bundle="$(mktemp -t iamjk-site-release.XXXXXX.tar)"
 # macOS can reject ControlPath values longer than the Unix socket limit.
@@ -82,8 +83,19 @@ ssh "${ssh_options[@]}" -- "$ssh_target" \
   "podman load --input '$remote_bundle' && rm -f '$remote_bundle' && systemctl --user daemon-reload && systemctl --user restart iamjk-site.service"
 
 printf 'Checking the running application container...\n'
+if [[ -z "$app_container_name" ]]; then
+  app_container_name="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
+    "podman ps --format '{{.Names}}' | grep -E '^(iamjk-site|systemd-iamjk-site)$' | head -n 1" || true)"
+fi
+if [[ -z "$app_container_name" ]]; then
+  printf 'Application container was not found after restarting iamjk-site.service.\n' >&2
+  ssh "${ssh_options[@]}" -- "$ssh_target" \
+    "systemctl --user status iamjk-site.service --no-pager || true; journalctl --user -u iamjk-site.service -n 80 --no-pager || true; podman ps --all --format 'table {{.Names}}\\t{{.Status}}'" >&2
+  exit 1
+fi
+printf 'Application container: %s\n' "$app_container_name"
 ssh "${ssh_options[@]}" -- "$ssh_target" \
-  "podman exec iamjk-site node -e 'fetch(\"http://127.0.0.1:4321/\").then(async response => { const html = await response.text(); if (!response.ok || !html.includes(\"contact-form\")) process.exit(1); }).catch(() => process.exit(1))'"
+  "podman exec '$app_container_name' node -e 'fetch(\"http://127.0.0.1:4321/\").then(async response => { const html = await response.text(); if (!response.ok || !html.includes(\"contact-form\")) process.exit(1); }).catch(() => process.exit(1))'"
 
 if [[ "$update_caddy" == "1" ]]; then
   ssh "${ssh_options[@]}" -- "$ssh_target" \
