@@ -144,6 +144,7 @@ Before accepting a visual change:
 6. Check keyboard focus, reduced motion, and no-script behavior.
 7. Confirm no blur, backdrop blur, shadow, purple/violet palette drift, city-level location, age/year of birth, or email address has returned.
 8. Review the diff and keep the generated `dist/` output out of Git.
+9. For releases, use `scripts/deploy-vps.sh` so the Podman build, rsync upload, and Bunny purge happen in order.
 
 ## Implementation source
 

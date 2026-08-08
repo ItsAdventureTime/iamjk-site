@@ -102,19 +102,26 @@ shell history.
 
 ## Deployment check
 
-Build locally and deploy only the generated static directory. Before copying it
-to the VPS, run:
+The canonical release path runs the build on macOS through Podman, uploads only
+dist/ with rsync, and calls bunny-purge after the upload succeeds:
 
-```bash
-pnpm test
-pnpm run check
-pnpm run build
+~~~bash
+VPS_HOST=YOUR_VPS_HOST \
+VPS_USER=jk \
+VPS_PATH=/home/jk/iamjk-site \
+./scripts/deploy-vps.sh
+~~~
+
+The helper runs the project checks before rsync. If diagnosing it manually, run
+the source and generated-output privacy scan after the container build:
+
+~~~bash
 rg -n -i 'mailto:|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}' dist
-```
+~~~
 
 The final scan should return no matches. Caddy’s CSP must allow the compiled
 same-origin Astro module while keeping inline event handlers disabled. See
-`README.md` for the current Caddy pattern and deployment commands.
+`README.md` for the Podman, rsync, bunny-purge, Caddy, and VPS instructions.
 
 ## References
 
@@ -126,3 +133,9 @@ same-origin Astro module while keeping inline event handlers disabled. See
   https://www.1password.dev/ssh/git-commit-signing
 - 1Password SSH agent:
   https://www.1password.dev/ssh/agent
+- Podman machine:
+  https://docs.podman.io/en/latest/markdown/podman-machine.1.html
+- Podman run:
+  https://docs.podman.io/en/v5.7.0/markdown/podman-run.1.html
+- Bunny purge cache:
+  https://docs.bunny.net/cdn/purge-cache

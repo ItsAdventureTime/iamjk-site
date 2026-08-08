@@ -22,6 +22,7 @@ The repository includes `.openai/hosting.json` with a project ID and null D1/R2 
 - `astro.config.mjs` — `output: "static"` and canonical site URL.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
+- `scripts/deploy-vps.sh` — Podman build, rsync upload, and Bunny purge release helper.
 - `public/` — static favicon and supporting assets.
 - `dist/` — generated release output; ignored by Git.
 
@@ -68,19 +69,89 @@ pnpm run preview
 
 Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Direct local rendering has been checked in the available browser runtime; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
 
-## Fedora CoreOS VPS deployment
+## Preferred macOS release workflow
 
-Build locally, then copy only the generated static directory to the host-side Caddy document root. Do not build on the VPS:
+The preferred release path runs on macOS:
 
-```bash
-pnpm install --frozen-lockfile
-pnpm test
-pnpm run check
-pnpm run build
-rsync -av --delete dist/ jk@YOUR_VPS_HOST:/home/jk/iamjk-site/
-```
+1. Podman runs the pinned Node and pnpm build in a disposable container.
+2. The helper starts the Podman machine when it is not running.
+3. rsync copies only the generated dist/ directory to the Caddy document root.
+4. bunny-purge runs only after rsync succeeds.
 
-Replace `YOUR_VPS_HOST` with the VPS hostname or IP. The `--delete` flag makes `/home/jk/iamjk-site/` match the local build; it does not affect other paths.
+Podman on macOS requires a virtual machine. Install it with Homebrew and
+initialize a machine once:
+
+~~~bash
+brew install podman
+podman machine init
+podman machine start
+~~~
+
+On later releases, start the existing machine when necessary:
+
+~~~bash
+podman machine start
+~~~
+
+Run the repeatable deployment helper:
+
+~~~bash
+VPS_HOST=YOUR_VPS_HOST \
+VPS_USER=jk \
+VPS_PATH=/home/jk/iamjk-site \
+./scripts/deploy-vps.sh
+~~~
+
+The helper uses docker.io/library/node:24-bookworm by default, installs the
+repository-pinned pnpm version inside the disposable container, runs
+pnpm install --frozen-lockfile, pnpm test, and pnpm run build, then syncs dist/
+with rsync --archive --compress --delete. Override the image or pnpm version
+only when the project runtime policy changes:
+
+~~~bash
+CONTAINER_IMAGE=docker.io/library/node:24-bookworm \
+PNPM_VERSION=11.15.1 \
+VPS_HOST=YOUR_VPS_HOST \
+./scripts/deploy-vps.sh
+~~~
+
+The helper requires a locally configured bunny-purge command. It invokes that
+command with no arguments by default, keeping credentials outside the
+repository. If the local wrapper needs arguments, pass them through
+BUNNY_PURGE_ARGS:
+
+~~~bash
+BUNNY_PURGE_ARGS='--helpful-local-arguments' \
+VPS_HOST=YOUR_VPS_HOST \
+./scripts/deploy-vps.sh
+~~~
+
+Do not put Bunny API keys in the repository, shell history, or deployment
+command. Bunny supports full-zone and URL/tag-based purge strategies; prefer
+the narrowest purge supported by the configured wrapper. A full purge can
+temporarily increase origin traffic while edge nodes refill.
+
+Manual fallback, useful when diagnosing the helper:
+
+~~~bash
+podman run --rm \
+  --volume "$PWD:/workspace" \
+  --workdir /workspace \
+  docker.io/library/node:24-bookworm \
+  bash -lc 'npm install --global pnpm@11.15.1 && pnpm install --frozen-lockfile && pnpm test && pnpm run build'
+
+rsync --archive --compress --delete dist/ \
+  jk@YOUR_VPS_HOST:/home/jk/iamjk-site/
+
+bunny-purge
+~~~
+
+## Fedora CoreOS VPS runtime notes
+
+The macOS helper above is the canonical release path. The VPS only receives the generated static directory; it does not compile the site. Keep the host-side Caddy document root and Quadlet mount aligned with the destination used by the helper:
+
+The container build and rsync commands are documented in the preferred workflow above. Replace YOUR_VPS_HOST with the VPS hostname or IP. The --delete flag makes the destination match the local build; it does not affect other paths.
+
 
 If your Quadlet mounts the host directory into the Caddy container, check that it points to the generated files:
 
@@ -192,6 +263,10 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 
 - Node.js release status: https://nodejs.org/en/about/previous-releases
 - Astro configuration reference: https://docs.astro.build/en/reference/configuration-reference/
+- Podman machine: https://docs.podman.io/en/latest/markdown/podman-machine.1.html
+- Podman run: https://docs.podman.io/en/v5.7.0/markdown/podman-run.1.html
+- Bunny purge cache: https://docs.bunny.net/cdn/purge-cache
+- Bunny purge URL API: https://docs.bunny.net/api-reference/core/purge/purge-url
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/
 - WCAG 2.2 animation from interactions: https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html
 - Caddy `root`: https://caddyserver.com/docs/caddyfile/directives/root
