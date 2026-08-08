@@ -158,6 +158,10 @@ same-origin Astro module while keeping inline event handlers disabled. See
   https://docs.podman.io/en/latest/markdown/podman-machine.1.html
 - Podman run:
   https://docs.podman.io/en/latest/markdown/podman-run.1.html
+- MDN Canvas optimization:
+  https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
+- MDN requestAnimationFrame:
+  https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
 - Node official image and Alpine tradeoffs:
   https://github.com/nodejs/docker-node
 - Bunny purge cache:

@@ -268,6 +268,8 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Podman machine: https://docs.podman.io/en/latest/markdown/podman-machine.1.html
 - Podman run: https://docs.podman.io/en/latest/markdown/podman-run.1.html
 - Node official image and Alpine tradeoffs: https://github.com/nodejs/docker-node
+- MDN Canvas optimization: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
+- MDN requestAnimationFrame: https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
 - Bunny purge cache: https://docs.bunny.net/cdn/purge-cache
 - Bunny purge URL API: https://docs.bunny.net/api-reference/core/purge/purge-url
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/

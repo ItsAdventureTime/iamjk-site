@@ -325,6 +325,8 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         let targetScroll = 0;
         let currentScroll = 0;
         let scrollProgress = 0;
+        let sectionStateDirty = true;
+        let lastReadoutIndex = -1;
         let pointerX = 0;
         let pointerY = 0;
         let time = 0;
@@ -345,32 +347,49 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           canvas.style.width = `${width}px`;
           canvas.style.height = `${height}px`;
           context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+          sectionStateDirty = true;
         };
 
         const updateSectionState = () => {
-          if (sections.length === 0) return;
-          let nearestDistance = Number.POSITIVE_INFINITY;
-          let nearestIndex = 0;
+          if (sections.length === 0 || !sectionStateDirty) return;
+          const focusY = height * 0.46;
+          let focusIndex = -1;
+          let focusDistance = Number.POSITIVE_INFINITY;
+          let visibleIndex = 0;
+          let visibleDistance = Number.POSITIVE_INFINITY;
+
           sections.forEach((section, index) => {
             const bounds = section.getBoundingClientRect();
-            const distance = Math.abs((bounds.top + bounds.height / 2) - height / 2);
+            const sectionCenter = bounds.top + bounds.height / 2;
+            const distance = Math.abs(sectionCenter - focusY);
+            const visible = bounds.bottom > 0 && bounds.top < height;
             const focus = Math.max(0, 1 - distance / Math.max(height * 0.85, 1));
             section.style.setProperty("--section-focus", focus.toFixed(3));
-            if (distance < nearestDistance) {
-              nearestDistance = distance;
-              nearestIndex = index;
+
+            if (visible && distance < visibleDistance) {
+              visibleDistance = distance;
+              visibleIndex = index;
+            }
+            if (bounds.top <= focusY && bounds.bottom >= focusY && distance < focusDistance) {
+              focusDistance = distance;
+              focusIndex = index;
             }
           });
+
+          const nearestIndex = focusIndex >= 0 ? focusIndex : visibleIndex;
           activeSectionIndex = nearestIndex;
           sections.forEach((section, index) => {
             const current = index === nearestIndex;
             section.classList.toggle("is-current", current);
             section.querySelector<HTMLElement>(".section-scene")?.classList.toggle("is-current", current);
           });
+          sectionStateDirty = false;
         };
 
         const updateReadout = () => {
           const phaseIndex = Math.min(phases.length - 1, activeSectionIndex);
+          if (phaseIndex === lastReadoutIndex) return;
+          lastReadoutIndex = phaseIndex;
           const phase = phases[phaseIndex];
           if (readoutIndex) readoutIndex.textContent = String(phaseIndex + 1).padStart(2, "0");
           if (readoutLabel) readoutLabel.textContent = phase.label;
@@ -534,7 +553,10 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         };
 
         window.addEventListener("resize", resize, { passive: true });
-        document.addEventListener("scroll", () => { targetScroll = window.scrollY; }, { passive: true });
+        document.addEventListener("scroll", () => {
+          targetScroll = window.scrollY;
+          sectionStateDirty = true;
+        }, { passive: true });
         window.addEventListener("pointermove", (event) => {
           pointerX = (event.clientX / width) - 0.5;
           pointerY = (event.clientY / height) - 0.5;

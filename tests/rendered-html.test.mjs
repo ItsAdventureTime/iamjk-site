@@ -38,6 +38,12 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(source, /requestAnimationFrame/i);
   assert.match(source, /prefers-reduced-motion/i);
   assert.match(source, /DETAIL/);
+  assert.match(source, /const focusY = height \* 0\.46/);
+  assert.match(source, /bounds\.top <= focusY && bounds\.bottom >= focusY/);
+  assert.match(source, /const nearestIndex = focusIndex >= 0 \? focusIndex : visibleIndex/);
+  assert.match(source, /let sectionStateDirty = true/);
+  assert.match(source, /if \(sections\.length === 0 \|\| !sectionStateDirty\) return/);
+  assert.match(source, /sectionStateDirty = true/);
 
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
