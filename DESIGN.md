@@ -106,6 +106,7 @@ Motion is part of the page’s structure, not decoration:
 - Scrolling changes the scene target and reveal state; section geometry is sampled only when scroll or resize marks it dirty.
 - `IntersectionObserver` adds content reveals without relying on experimental scroll-timeline APIs.
 - CSS transforms, opacity, and `requestAnimationFrame` provide the cross-engine baseline.
+- Cap canvas pixel density on mobile and stop scheduling frames while the document is hidden; resume cleanly on visibility changes.
 - `prefers-reduced-motion: reduce` must remove non-essential movement while retaining content, contrast, and section state.
 - Never make text unreadable until an animation completes.
 

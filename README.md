@@ -67,7 +67,7 @@ pnpm run build
 pnpm run preview
 ```
 
-Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Direct local rendering has been checked in the available browser runtime; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
+Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties. The canvas caps mobile pixel density and suspends its frame scheduler while the document is hidden to reduce Safari/WebKit and Chromium/Blink battery and main-thread work. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Direct local rendering has been checked in the available browser runtime; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
 
 ## Preferred macOS release workflow
 

@@ -331,6 +331,8 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         let pointerY = 0;
         let time = 0;
         let lastFrame = 0;
+        let animationFrameId = 0;
+        let pageVisible = !document.hidden;
         const particles = Array.from({ length: 160 }, (_, index) => ({
           angle: index * 2.39996,
           radius: 0.22 + ((index * 47) % 73) / 100,
@@ -339,9 +341,10 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         }));
 
         const resize = () => {
-          pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
           width = window.innerWidth;
           height = window.innerHeight;
+          const maxPixelRatio = width < 700 ? 1.5 : 2;
+          pixelRatio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
           canvas.width = width * pixelRatio;
           canvas.height = height * pixelRatio;
           canvas.style.width = `${width}px`;
@@ -438,7 +441,14 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           context.restore();
         };
 
+        const scheduleFrame = () => {
+          if (!pageVisible || animationFrameId !== 0) return;
+          animationFrameId = window.requestAnimationFrame(drawScene);
+        };
+
         const drawScene = (timestamp: number) => {
+          animationFrameId = 0;
+          if (!pageVisible) return;
           const delta = Math.min((timestamp - lastFrame) / 1000, 0.05);
           lastFrame = timestamp;
           if (!motionQuery.matches) time += delta;
@@ -549,7 +559,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           context.stroke();
           drawNode(0, 0, 4, activePhase.color, 0.95);
           context.restore();
-          window.requestAnimationFrame(drawScene);
+          scheduleFrame();
         };
 
         window.addEventListener("resize", resize, { passive: true });
@@ -567,9 +577,16 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           document.documentElement.style.setProperty("--scene-shift-x", `${(pointerX * -10).toFixed(2)}px`);
           document.documentElement.style.setProperty("--scene-shift-y", `${(pointerY * -10).toFixed(2)}px`);
         }, { passive: true });
+        document.addEventListener("visibilitychange", () => {
+          pageVisible = !document.hidden;
+          if (pageVisible) {
+            lastFrame = performance.now();
+            scheduleFrame();
+          }
+        }, { passive: true });
         resize();
         targetScroll = window.scrollY;
-        window.requestAnimationFrame(drawScene);
+        scheduleFrame();
       }
     </script>
   </body>

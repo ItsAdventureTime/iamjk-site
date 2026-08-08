@@ -44,6 +44,10 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(source, /let sectionStateDirty = true/);
   assert.match(source, /if \(sections\.length === 0 \|\| !sectionStateDirty\) return/);
   assert.match(source, /sectionStateDirty = true/);
+  assert.match(source, /const maxPixelRatio = width < 700 \? 1\.5 : 2/);
+  assert.match(source, /let pageVisible = !document\.hidden/);
+  assert.match(source, /if \(!pageVisible \|\| animationFrameId !== 0\) return/);
+  assert.match(source, /document\.addEventListener\("visibilitychange"/);
 
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
