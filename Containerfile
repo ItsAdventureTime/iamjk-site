@@ -1,7 +1,7 @@
 FROM docker.io/library/node:24-alpine AS build
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN npm install --global pnpm@11.15.1 \
   && pnpm install --frozen-lockfile
 COPY . .

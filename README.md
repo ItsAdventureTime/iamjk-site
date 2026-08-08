@@ -23,6 +23,7 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `astro.config.mjs` — Node standalone output and canonical site URL.
 - `src/pages/api/contact.ts` — same-origin contact endpoint, Turnstile verification, validation, throttling, and Resend delivery.
 - `Containerfile` — reproducible Node 24 production image.
+- `pnpm-workspace.yaml` — explicit allowlist for the reviewed `esbuild` and `sharp` install scripts required by the build.
 - `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
@@ -150,6 +151,10 @@ Linux-only node_modules tmpfs, so macOS host modules cannot trigger pnpm's
 non-interactive cleanup prompt. Alpine supplies sh, so the helper does not
 assume Bash. Override the image or pnpm version only when the project runtime
 policy changes:
+
+The repository explicitly allows only the `esbuild` and `sharp` dependency
+build scripts. pnpm blocks unreviewed dependency scripts by default; keep this
+allowlist narrow and review it when dependencies change.
 
 ~~~bash
 CONTAINER_IMAGE=docker.io/library/node:24-alpine \
