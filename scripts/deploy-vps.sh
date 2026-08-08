@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-container_image="${CONTAINER_IMAGE:-docker.io/library/node:24-bookworm}"
+container_image="${CONTAINER_IMAGE:-docker.io/library/node:24-alpine}"
 vps_user="${VPS_USER:-jk}"
 vps_host="${VPS_HOST:-}"
 vps_path="${VPS_PATH:-/home/jk/iamjk-site}"
@@ -32,8 +32,9 @@ esac
 podman run --rm \
   --volume "$project_dir:/workspace" \
   --workdir /workspace \
+  --tmpfs /workspace/node_modules:notmpcopyup \
   "$container_image" \
-  bash -lc "npm install --global pnpm@$pnpm_version && pnpm install --frozen-lockfile && pnpm test && pnpm run build"
+  sh -lc "npm install --global pnpm@$pnpm_version && CI=true pnpm install --frozen-lockfile && CI=true pnpm test"
 
 rsync --archive --compress --delete --human-readable --itemize-changes \
   "$project_dir/dist/" "$vps_user@$vps_host:$vps_path/"

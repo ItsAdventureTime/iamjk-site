@@ -93,23 +93,27 @@ On later releases, start the existing machine when necessary:
 podman machine start
 ~~~
 
-Run the repeatable deployment helper:
+Run the repeatable deployment helper from the repository root:
 
 ~~~bash
+cd ~/dev/iamjk-site
 VPS_HOST=YOUR_VPS_HOST \
 VPS_USER=jk \
 VPS_PATH=/home/jk/iamjk-site \
 ./scripts/deploy-vps.sh
 ~~~
 
-The helper uses docker.io/library/node:24-bookworm by default, installs the
-repository-pinned pnpm version inside the disposable container, runs
-pnpm install --frozen-lockfile, pnpm test, and pnpm run build, then syncs dist/
-with rsync --archive --compress --delete. Override the image or pnpm version
-only when the project runtime policy changes:
+The helper uses the pinned Node 24 Alpine image by default, installs the
+repository-pinned pnpm version inside the disposable container, runs the
+frozen-lockfile install and test/build pipeline, then syncs dist/ with
+rsync --archive --compress --delete. The container mounts an ephemeral
+Linux-only node_modules tmpfs, so macOS host modules cannot trigger pnpm's
+non-interactive cleanup prompt. Alpine supplies sh, so the helper does not
+assume Bash. Override the image or pnpm version only when the project runtime
+policy changes:
 
 ~~~bash
-CONTAINER_IMAGE=docker.io/library/node:24-bookworm \
+CONTAINER_IMAGE=docker.io/library/node:24-alpine \
 PNPM_VERSION=11.15.1 \
 VPS_HOST=YOUR_VPS_HOST \
 ./scripts/deploy-vps.sh
@@ -134,8 +138,9 @@ Manual fallback, useful when diagnosing the helper:
 podman run --rm \
   --volume "$PWD:/workspace" \
   --workdir /workspace \
-  docker.io/library/node:24-bookworm \
-  bash -lc 'npm install --global pnpm@11.15.1 && pnpm install --frozen-lockfile && pnpm test && pnpm run build'
+  --tmpfs /workspace/node_modules:notmpcopyup \
+  docker.io/library/node:24-alpine \
+  sh -lc 'npm install --global pnpm@11.15.1 && CI=true pnpm install --frozen-lockfile && CI=true pnpm test'
 
 rsync --archive --compress --delete dist/ \
   jk@YOUR_VPS_HOST:/home/jk/iamjk-site/
@@ -261,7 +266,8 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Node.js release status: https://nodejs.org/en/about/previous-releases
 - Astro configuration reference: https://docs.astro.build/en/reference/configuration-reference/
 - Podman machine: https://docs.podman.io/en/latest/markdown/podman-machine.1.html
-- Podman run: https://docs.podman.io/en/v5.7.0/markdown/podman-run.1.html
+- Podman run: https://docs.podman.io/en/latest/markdown/podman-run.1.html
+- Node official image and Alpine tradeoffs: https://github.com/nodejs/docker-node
 - Bunny purge cache: https://docs.bunny.net/cdn/purge-cache
 - Bunny purge URL API: https://docs.bunny.net/api-reference/core/purge/purge-url
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/

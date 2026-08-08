@@ -102,10 +102,13 @@ shell history.
 
 ## Deployment check
 
-The canonical release path runs the build on macOS through Podman, uploads only
-dist/ with rsync, then invokes the VPS-side bunny-purge script over SSH:
+The canonical release path runs the build on macOS through Podman, using the
+pinned Node 24 Alpine image with an ephemeral Linux-only node_modules tmpfs and
+CI mode. It uploads only dist/ with rsync, then invokes the VPS-side
+bunny-purge script over SSH. Run it from the repository root:
 
 ~~~bash
+cd ~/dev/iamjk-site
 VPS_HOST=YOUR_VPS_HOST \
 VPS_USER=jk \
 VPS_PATH=/home/jk/iamjk-site \
@@ -136,6 +139,8 @@ same-origin Astro module while keeping inline event handlers disabled. See
 - Podman machine:
   https://docs.podman.io/en/latest/markdown/podman-machine.1.html
 - Podman run:
-  https://docs.podman.io/en/v5.7.0/markdown/podman-run.1.html
+  https://docs.podman.io/en/latest/markdown/podman-run.1.html
+- Node official image and Alpine tradeoffs:
+  https://github.com/nodejs/docker-node
 - Bunny purge cache:
   https://docs.bunny.net/cdn/purge-cache
