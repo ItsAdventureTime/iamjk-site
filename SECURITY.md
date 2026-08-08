@@ -18,6 +18,20 @@ iamjk.site is a personal website, not a contact database.
 - Do not place credentials, API tokens, private keys, 1Password secrets, or VPS secrets in the repository.
 - Keep contact copy online-first; visitors can look JK up without exposing an inbox.
 
+## Repository boundary
+
+Only source, build configuration, public assets, tests, and release guidance
+belong in GitHub. The following remain local-only and are ignored:
+
+- `.openai/` — hosting-provider metadata not needed by the VPS deployment.
+- `.serena/` — local agent configuration and memories.
+- `.env*`, private keys, certificates, credentials, generated output, and
+  dependency directories.
+
+These paths were removed from Git tracking in the repository cleanup. A local
+ignore rule does not remove historical data; if a real secret ever entered Git,
+revoke it first and follow GitHub's sensitive-data removal procedure.
+
 ## Local scan
 
 Run the build and scan both source files and generated output:
@@ -132,6 +146,10 @@ same-origin Astro module while keeping inline event handlers disabled. See
   https://docs.github.com/en/code-security/concepts/secret-security/push-protection
 - GitHub secret scanning:
   https://docs.github.com/en/code-security/concepts/secret-security/about-alerts
+- GitHub removing sensitive data:
+  https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository
+- GitHub preventing data leaks:
+  https://docs.github.com/en/code-security/tutorials/secure-your-organization/prevent-data-leaks
 - 1Password SSH commit signing:
   https://www.1password.dev/ssh/git-commit-signing
 - 1Password SSH agent:

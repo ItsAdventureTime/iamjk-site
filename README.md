@@ -13,7 +13,7 @@ The project is an Astro static site. Astro renders the page to HTML and browser 
 - Caddy `file_server` for the VPS runtime.
 - No database, API server, SSR runtime, remote font, image pipeline, or public email address.
 
-The repository includes `.openai/hosting.json` with a project ID and null D1/R2 bindings. It is metadata only for this static build; the intended production deployment remains the existing Fedora CoreOS VPS with a Caddy-mounted static directory.
+The intended production deployment is the existing Fedora CoreOS VPS with a Caddy-mounted static directory. Local agent, hosting-provider, and deployment metadata stay outside the public repository.
 
 ## Repository map
 
@@ -23,7 +23,7 @@ The repository includes `.openai/hosting.json` with a project ID and null D1/R2 
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
 - `scripts/deploy-vps.sh` — Podman build, rsync upload, and Bunny purge release helper.
-- `public/` — static favicon and supporting assets.
+- `public/` — the static favicon and intentionally used public assets.
 - `dist/` — generated release output; ignored by Git.
 
 ## Local development
