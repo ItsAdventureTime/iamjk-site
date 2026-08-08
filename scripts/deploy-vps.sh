@@ -9,7 +9,9 @@ vps_path="${VPS_PATH:-/home/jk/iamjk-site}"
 pnpm_version="${PNPM_VERSION:-11.15.1}"
 release_image="${RELEASE_IMAGE:-localhost/iamjk-site:release}"
 release_bundle="$(mktemp -t iamjk-site-release.XXXXXX.tar)"
-ssh_control_dir="$(mktemp -d -t iamjk-site-ssh.XXXXXX)"
+# macOS can reject ControlPath values longer than the Unix socket limit.
+# Keep this path short; %C still makes the socket unique per SSH destination.
+ssh_control_dir="$(mktemp -d /tmp/iamjk-site-XXXXXX)"
 ssh_control_path="$ssh_control_dir/control"
 ssh_target="$vps_user@$vps_host"
 ssh_options=(-o ControlMaster=auto -o ControlPersist=5m -o ControlPath="$ssh_control_path")
