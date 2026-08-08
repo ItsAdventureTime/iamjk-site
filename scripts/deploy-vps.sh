@@ -13,7 +13,7 @@ if [[ -z "$vps_host" ]]; then
   exit 2
 fi
 
-for command_name in podman rsync bunny-purge; do
+for command_name in podman rsync ssh; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     printf 'Required command not found: %s\n' "$command_name" >&2
     exit 127
@@ -38,11 +38,6 @@ podman run --rm \
 rsync --archive --compress --delete --human-readable --itemize-changes \
   "$project_dir/dist/" "$vps_user@$vps_host:$vps_path/"
 
-purge_args=()
-if [[ -n "${BUNNY_PURGE_ARGS:-}" ]]; then
-  read -r -a purge_args <<< "$BUNNY_PURGE_ARGS"
-fi
-
-bunny-purge "${purge_args[@]}"
+ssh -- "$vps_user@$vps_host" bunny-purge
 
 printf 'Deployment complete: %s@%s:%s\n' "$vps_user" "$vps_host" "$vps_path"

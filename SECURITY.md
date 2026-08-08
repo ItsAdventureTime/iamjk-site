@@ -103,7 +103,7 @@ shell history.
 ## Deployment check
 
 The canonical release path runs the build on macOS through Podman, uploads only
-dist/ with rsync, and calls bunny-purge after the upload succeeds:
+dist/ with rsync, then invokes the VPS-side bunny-purge script over SSH:
 
 ~~~bash
 VPS_HOST=YOUR_VPS_HOST \

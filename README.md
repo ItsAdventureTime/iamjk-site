@@ -76,7 +76,7 @@ The preferred release path runs on macOS:
 1. Podman runs the pinned Node and pnpm build in a disposable container.
 2. The helper starts the Podman machine when it is not running.
 3. rsync copies only the generated dist/ directory to the Caddy document root.
-4. bunny-purge runs only after rsync succeeds.
+4. SSH invokes the VPS-side bunny-purge script only after rsync succeeds.
 
 Podman on macOS requires a virtual machine. Install it with Homebrew and
 initialize a machine once:
@@ -115,20 +115,17 @@ VPS_HOST=YOUR_VPS_HOST \
 ./scripts/deploy-vps.sh
 ~~~
 
-The helper requires a locally configured bunny-purge command. It invokes that
-command with no arguments by default, keeping credentials outside the
-repository. If the local wrapper needs arguments, pass them through
-BUNNY_PURGE_ARGS:
+The helper requires SSH access to the VPS and a VPS-side bunny-purge script. It
+does not look for bunny-purge on macOS and does not copy CDN credentials to the
+local machine. After rsync succeeds, it runs:
 
 ~~~bash
-BUNNY_PURGE_ARGS='--helpful-local-arguments' \
-VPS_HOST=YOUR_VPS_HOST \
-./scripts/deploy-vps.sh
+ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge
 ~~~
 
 Do not put Bunny API keys in the repository, shell history, or deployment
 command. Bunny supports full-zone and URL/tag-based purge strategies; prefer
-the narrowest purge supported by the configured wrapper. A full purge can
+the narrowest purge implemented by the VPS-side wrapper. A full purge can
 temporarily increase origin traffic while edge nodes refill.
 
 Manual fallback, useful when diagnosing the helper:
@@ -143,7 +140,7 @@ podman run --rm \
 rsync --archive --compress --delete dist/ \
   jk@YOUR_VPS_HOST:/home/jk/iamjk-site/
 
-bunny-purge
+ssh jk@YOUR_VPS_HOST bunny-purge
 ~~~
 
 ## Fedora CoreOS VPS runtime notes
