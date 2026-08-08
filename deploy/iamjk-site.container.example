@@ -1,0 +1,25 @@
+[Unit]
+Description=iamjk.site Astro application
+After=network-online.target
+
+[Container]
+Image=localhost/iamjk-site:release
+ContainerName=iamjk-site
+PublishPort=127.0.0.1:4321:4321
+Secret=iamjk-site_TURNSTILE_SECRET,type=env,target=TURNSTILE_SECRET
+Secret=iamjk-site_resend-api-key,type=env,target=RESEND_API_KEY
+Secret=iamjk-site_resend-from,type=env,target=RESEND_FROM
+Secret=iamjk-site_resend-to,type=env,target=RESEND_TO
+Environment=HOST=0.0.0.0
+Environment=PORT=4321
+NoNewPrivileges=true
+ReadOnly=true
+ReadOnlyTmpfs=true
+Tmpfs=/tmp
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

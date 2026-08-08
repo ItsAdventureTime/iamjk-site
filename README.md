@@ -2,24 +2,28 @@
 
 Personal website for Juan Karlo “JK” de Guzman. The site is intentionally personal rather than professional: it covers his interests, faith, teaching, technology, reading, ideas, and the questions he keeps returning to.
 
-The project is an Astro static site. Astro renders the page to HTML and browser assets at build time; Caddy serves the resulting `dist/` directory. The page keeps its motion dependency-free with a shared Canvas 2D field, CSS-rendered section motifs, pointer/scroll response, and IntersectionObserver reveals.
+The project is an Astro application. The public page is prerendered, while the contact endpoint runs in the Node adapter so Turnstile and Resend secrets stay server-side. Caddy reverse-proxies the application container. The page keeps its motion dependency-free with a shared Canvas 2D field, CSS-rendered section motifs, pointer/scroll response, and IntersectionObserver reveals.
 
 ## Current stack
 
-- Astro `7.1.3` with static output.
+- Astro `7.1.3` with the `@astrojs/node` standalone adapter.
 - Node.js `>=24.18.0`, aligned with the current Node 24 LTS line.
 - pnpm `11.15.1`, recorded through `packageManager` in `package.json`; verify the installed CLI matches it.
 - TypeScript `6.0.3`.
-- Caddy `file_server` for the VPS runtime.
-- No database, API server, SSR runtime, remote font, image pipeline, or public email address.
+- Caddy reverse proxy for the VPS runtime.
+- Cloudflare Turnstile server-side verification and Resend email delivery.
+- No database, remote font, or public email address.
 
-The intended production deployment is the existing Fedora CoreOS VPS with a Caddy-mounted static directory. Local agent, hosting-provider, and deployment metadata stay outside the public repository.
+The intended production deployment is the existing Fedora CoreOS VPS with a rootless Podman application container and Caddy reverse proxy. Local agent, hosting-provider, and deployment metadata stay outside the public repository.
 
 ## Repository map
 
 - `src/pages/index.astro` — page structure, copy, metadata, Canvas 2D script, and section state.
 - `app/globals.css` — design tokens, responsive layout, motifs, surfaces, motion, and browser fallbacks.
-- `astro.config.mjs` — `output: "static"` and canonical site URL.
+- `astro.config.mjs` — Node standalone output and canonical site URL.
+- `src/pages/api/contact.ts` — same-origin contact endpoint, Turnstile verification, validation, throttling, and Resend delivery.
+- `Containerfile` — reproducible Node 24 production image.
+- `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
 - `scripts/deploy-vps.sh` — Podman build, rsync upload, and Bunny purge release helper.
@@ -47,7 +51,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the local URL Astro prints. Build output is written to `dist/`.
+Open the local URL Astro prints. Build output is written to `dist/`; the server endpoint is emitted under `dist/server/`.
 
 ## Validation
 
@@ -58,7 +62,41 @@ pnpm run check
 pnpm test
 ```
 
-The `test` script runs `astro build` before Node’s test runner checks `dist/index.html`. It verifies metadata, important copy, section motifs, the same-origin module, accessibility markers, sensitive-content exclusions, email-address exclusions, and the no-blur design constraints.
+The `test` script runs `astro build` before Node’s test runner checks
+`dist/client/index.html`. It verifies metadata, important copy, section motifs,
+the same-origin module, accessibility markers, sensitive-content exclusions,
+email-address exclusions, and the no-blur design constraints.
+
+## Contact form secrets and Turnstile
+
+The browser receives only the public Turnstile site key. The server validates
+each single-use token at Cloudflare before calling Resend. The endpoint also
+enforces the required name, country, and message fields; caps input sizes;
+rejects the honeypot and fast submissions; checks same-origin requests; and
+throttles each forwarded client address.
+
+Create these Podman secrets on the VPS. Never place their values in source,
+the image, the Quadlet file, or shell history:
+
+```bash
+printf '%s' "$TURNSTILE_SECRET_VALUE" | podman secret create iamjk-site_TURNSTILE_SECRET -
+printf '%s' "$RESEND_API_KEY_VALUE" | podman secret create iamjk-site_resend-api-key -
+printf '%s' 'website@iamjk.site' | podman secret create iamjk-site_resend-from -
+printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
+```
+
+Install `deploy/iamjk-site.container.example` as the user Quadlet
+`iamjk-site.container`, then reload and start it:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now iamjk-site.service
+```
+
+The deployment helper builds the image, transfers an OCI archive, loads it on
+the VPS, and restarts only `iamjk-site.service`. Caddy should proxy
+`iamjk.site` to `127.0.0.1:4321` and retain the security headers described
+below. Do not expose port 4321 publicly.
 
 For a production-style local check:
 
@@ -73,10 +111,11 @@ Node 25 and later do not ship the Corepack executable, so this guide invokes `pn
 
 The preferred release path runs on macOS:
 
-1. Podman runs the pinned Node and pnpm build in a disposable container.
+1. Podman runs the pinned Node and pnpm test pipeline in a disposable container.
 2. The helper starts the Podman machine when it is not running.
-3. rsync copies only the generated dist/ directory to the Caddy document root.
-4. SSH invokes the VPS-side bunny-purge script only after rsync succeeds.
+3. Podman builds a standalone application image and transfers an OCI archive.
+4. SSH loads the image and restarts the VPS-side Quadlet service.
+5. SSH invokes the VPS-side bunny-purge script only after the service restarts.
 
 Podman on macOS requires a virtual machine. Install it with Homebrew and
 initialize a machine once:
@@ -105,8 +144,8 @@ VPS_PATH=/home/jk/iamjk-site \
 
 The helper uses the pinned Node 24 Alpine image by default, installs the
 repository-pinned pnpm version inside the disposable container, runs the
-frozen-lockfile install and test/build pipeline, then syncs dist/ with
-rsync --archive --compress --delete. The container mounts an ephemeral
+frozen-lockfile install and test pipeline, builds `iamjk-site:release`, and
+transfers it with rsync. The container mounts an ephemeral
 Linux-only node_modules tmpfs, so macOS host modules cannot trigger pnpm's
 non-interactive cleanup prompt. Alpine supplies sh, so the helper does not
 assume Bash. Override the image or pnpm version only when the project runtime
@@ -132,7 +171,7 @@ command. Bunny supports full-zone and URL/tag-based purge strategies; prefer
 the narrowest purge implemented by the VPS-side wrapper. A full purge can
 temporarily increase origin traffic while edge nodes refill.
 
-Manual fallback, useful when diagnosing the helper:
+Manual test fallback, useful when diagnosing the helper:
 
 ~~~bash
 podman run --rm \
@@ -142,35 +181,21 @@ podman run --rm \
   docker.io/library/node:24-alpine \
   sh -lc 'npm install --global pnpm@11.15.1 && CI=true pnpm install --frozen-lockfile && CI=true pnpm test'
 
-rsync --archive --compress --delete dist/ \
-  jk@YOUR_VPS_HOST:/home/jk/iamjk-site/
-
-ssh jk@YOUR_VPS_HOST bunny-purge
+podman build --tag localhost/iamjk-site:release --file Containerfile .
 ~~~
 
 ## Fedora CoreOS VPS runtime notes
 
-The macOS helper above is the canonical release path. The VPS only receives the generated static directory; it does not compile the site. Keep the host-side Caddy document root and Quadlet mount aligned with the destination used by the helper:
-
-The container build and rsync commands are documented in the preferred workflow above. Replace YOUR_VPS_HOST with the VPS hostname or IP. The --delete flag makes the destination match the local build; it does not affect other paths.
-
-
-If your Quadlet mounts the host directory into the Caddy container, check that it points to the generated files:
-
-```ini
-Volume=/home/jk/iamjk-site:/srv/iamjk-site:ro,Z
-```
-
-The Caddy process needs directory traversal and file-read permissions. The exact user/group depends on the host setup; inspect them before changing ownership. A common host-side permission check is:
-
-```bash
-namei -l /home/jk/iamjk-site
-find /home/jk/iamjk-site -maxdepth 2 -type f -print
-```
+The macOS helper above is the canonical release path. The VPS receives an OCI
+image and runs it as the rootless Quadlet service described above. Caddy must
+reach only the loopback-published application port.
 
 ## Caddy configuration
 
-Caddy’s documented static pattern pairs `root` with `file_server`. The current repository needs a same-origin JavaScript policy because Astro emits a compiled module under `/_astro/`. Do not use the generic `temporary_static_site` snippet if it sets `script-src 'none'`.
+Caddy reverse-proxies the Astro Node server. Turnstile requires its browser
+script and frame origin in the policy; the form also needs same-origin API
+requests. Do not use a policy that sets `script-src 'none'` or blocks
+`challenges.cloudflare.com`.
 
 Use a dedicated site snippet like this, adapting the shared security headers to your existing Caddyfile:
 
@@ -179,11 +204,11 @@ Use a dedicated site snippet like this, adapting the shared security headers to 
     import common_security
 
     header {
-        >Content-Security-Policy "default-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests"
+        >Content-Security-Policy "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; media-src 'none'; object-src 'none'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests"
         >Cache-Control "public, max-age=300, must-revalidate"
     }
 
-    file_server
+    reverse_proxy 127.0.0.1:4321
 }
 
 iamjk.site {
@@ -194,7 +219,9 @@ iamjk.site {
 
 The page source contains no literal `style="..."` or inline event handlers, but the runtime updates CSS custom properties through the DOM style API for pointer and scroll parallax. That is why the deployment policy allows `style-src-attr 'unsafe-inline'` while keeping `script-src-attr 'none'` and `script-src 'self'`. If you later remove the DOM style updates, you can tighten the style-attribute directive and retest in the deployed browsers.
 
-Caddy’s `encode zstd gzip` is appropriate for this static output. Keep hashed `/_astro/` assets immutable if your deployment process preserves their names; revalidate `/` and `/index.html` so a new HTML shell is discovered.
+Caddy’s `encode zstd gzip` is appropriate for this application. The Node
+adapter serves prerendered page output and the `/api/contact` endpoint from
+the same origin, so no public API port or cross-origin policy is needed.
 
 Validate and reload the user service only after the config passes:
 

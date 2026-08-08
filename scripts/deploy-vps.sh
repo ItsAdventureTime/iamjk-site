@@ -7,6 +7,10 @@ vps_user="${VPS_USER:-jk}"
 vps_host="${VPS_HOST:-}"
 vps_path="${VPS_PATH:-/home/jk/iamjk-site}"
 pnpm_version="${PNPM_VERSION:-11.15.1}"
+release_image="${RELEASE_IMAGE:-localhost/iamjk-site:release}"
+release_bundle="$(mktemp -t iamjk-site-release.XXXXXX.tar)"
+remote_bundle="$vps_path/.iamjk-site-release.tar"
+trap 'rm -f "$release_bundle"' EXIT
 
 if [[ -z "$vps_host" ]]; then
   printf 'Set VPS_HOST before deploying.\n' >&2
@@ -36,8 +40,13 @@ podman run --rm \
   "$container_image" \
   sh -lc "npm install --global pnpm@$pnpm_version && CI=true pnpm install --frozen-lockfile && CI=true pnpm test"
 
-rsync --archive --compress --delete --human-readable --itemize-changes \
-  "$project_dir/dist/" "$vps_user@$vps_host:$vps_path/"
+podman build --tag "$release_image" --file "$project_dir/Containerfile" "$project_dir"
+podman save --format oci-archive --output "$release_bundle" "$release_image"
+ssh -- "$vps_user@$vps_host" "mkdir -p '$vps_path'"
+rsync --archive --compress --human-readable --itemize-changes \
+  "$release_bundle" "$vps_user@$vps_host:$remote_bundle"
+ssh -- "$vps_user@$vps_host" \
+  "podman load --input '$remote_bundle' && rm -f '$remote_bundle' && systemctl --user daemon-reload && systemctl --user restart iamjk-site.service"
 
 ssh -- "$vps_user@$vps_host" bunny-purge
 

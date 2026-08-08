@@ -1,7 +1,7 @@
 # Security and privacy guide
 
-**Reviewed:** 2026-08-08
-**Scope:** public iamjk.site source, generated static output, and Git release workflow
+**Reviewed:** 2026-08-09
+**Scope:** public iamjk.site source, contact endpoint, container runtime, and Git release workflow
 
 The 2026-08-08 personal-context review informs the public copy. Only the
 non-sensitive, intentionally shareable layer belongs here. The source profile
@@ -9,14 +9,14 @@ stays outside this repository.
 
 ## Public-content rules
 
-iamjk.site is a personal website, not a contact database.
+iamjk.site is a personal website with a privacy-conscious contact endpoint.
 
-- Do not publish an email address, `mailto:` link, contact form, or address-like placeholder.
+- Do not publish an email address or `mailto:` link. Visitors use the protected contact form.
 - Do not publish JK’s age or year of birth.
 - Use “Philippines,” not a more precise city.
 - Keep personal details limited to the content JK intentionally chose to share.
 - Do not place credentials, API tokens, private keys, 1Password secrets, or VPS secrets in the repository.
-- Keep contact copy online-first; visitors can look JK up without exposing an inbox.
+- Keep contact details server-side; the form sends messages through Resend without exposing the destination inbox in page source.
 
 ## Repository boundary
 
@@ -52,10 +52,34 @@ rg -n -i \
   dist
 ```
 
-The repository scan should produce no email-address matches. The rendered-output
-test separately rejects email-shaped strings and `mailto:` links in
-`dist/index.html`. A clean result is a release check, not proof that arbitrary
-personal data is impossible to add later.
+The repository scan should produce no email-address matches in public source.
+The rendered-output test separately rejects email-shaped strings and `mailto:`
+links in `dist/client/index.html`. Runtime-only sender and recipient values are
+injected through Podman secrets and never copied into the image or browser
+bundle. A clean result is a release check, not proof that arbitrary personal
+data is impossible to add later.
+
+## Contact endpoint
+
+The browser exposes only the public Turnstile site key. The server validates
+each token at Cloudflare’s Siteverify endpoint before calling Resend. Tokens
+are single-use and short-lived. The endpoint also requires name, country, and
+message; caps field and request sizes; rejects a honeypot and implausibly fast
+submissions; checks same-origin requests; and throttles repeated attempts by
+client address.
+
+Create these secrets on the VPS and keep their values out of source control,
+container build arguments, logs, and shell history:
+
+```bash
+printf '%s' "$TURNSTILE_SECRET_VALUE" | podman secret create iamjk-site_TURNSTILE_SECRET -
+printf '%s' "$RESEND_API_KEY_VALUE" | podman secret create iamjk-site_resend-api-key -
+printf '%s' 'website@iamjk.site' | podman secret create iamjk-site_resend-from -
+printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
+```
+
+The Quadlet template maps these secrets to runtime-only environment variables.
+Do not publish port `4321`; Caddy should reverse-proxy to its loopback address.
 
 ## Git history
 
@@ -116,10 +140,10 @@ shell history.
 
 ## Deployment check
 
-The canonical release path runs the build on macOS through Podman, using the
-pinned Node 24 Alpine image with an ephemeral Linux-only node_modules tmpfs and
-CI mode. It uploads only dist/ with rsync, then invokes the VPS-side
-bunny-purge script over SSH. Run it from the repository root:
+The canonical release path runs tests on macOS through Podman, builds the
+standalone Node 24 Alpine image, transfers an OCI archive, loads it on the VPS,
+restarts the Quadlet service, and then invokes the VPS-side bunny-purge script
+over SSH. Run it from the repository root:
 
 ~~~bash
 cd ~/dev/iamjk-site

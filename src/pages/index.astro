@@ -1,5 +1,10 @@
 ---
 import "../../app/globals.css";
+import { countries } from "../lib/countries";
+
+export const prerender = true;
+
+const turnstileSiteKey = "0x4AAAAAAEKbOwoKL91JuE3n";
 
 const strengths = [
   ["01", "Maximizer", "I keep asking how a good thing could become a better one."],
@@ -274,7 +279,48 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           <span class="scene-signal scene-signal-one"></span><span class="scene-signal scene-signal-two"></span><span class="scene-signal scene-signal-three"></span><span class="scene-signal-node"></span>
         </div>
         <h2 id="contact-title" data-reveal="contact-title">If one of these threads <em>crosses yours,</em> say hello.</h2>
-        <p class="contact-copy readable-zone" data-reveal="contact-copy">If you’d like to get in touch, look me up online. I’m not hard to find.</p>
+        <div class="contact-layout" data-reveal="contact-copy">
+          <div class="contact-intro readable-zone">
+            <p class="contact-copy">If one of these threads crosses yours, write to me here. Email and mobile number are optional; leave at least one if you would like a reply.</p>
+            <p class="contact-privacy">Your message is sent privately to JK. Please do not include passwords, financial details, government IDs, or sensitive health information.</p>
+          </div>
+          <form class="contact-form" action="/api/contact" method="post">
+            <div class="contact-form-grid">
+              <label>
+                <span>Name or nickname <b aria-hidden="true">*</b></span>
+                <input name="name" type="text" autocomplete="name" required maxlength="80" />
+              </label>
+              <label>
+                <span>Country or territory <b aria-hidden="true">*</b></span>
+                <select name="country" autocomplete="country-name" required>
+                  <option value="">Select your country</option>
+            {countries.map(({ code, name }) => <option value={code}>{name}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Email <small>(optional)</small></span>
+                <input name="email" type="email" autocomplete="email" maxlength="254" aria-describedby="reply-note" />
+              </label>
+              <label>
+                <span>Mobile number <small>(optional)</small></span>
+                <input name="mobile" type="tel" autocomplete="tel" maxlength="32" aria-describedby="reply-note" />
+              </label>
+            </div>
+            <p id="reply-note" class="contact-field-note">Leave an email or mobile number if you would like me to reply.</p>
+            <label>
+              <span>Message <b aria-hidden="true">*</b></span>
+              <textarea name="message" rows="7" required maxlength="5000"></textarea>
+            </label>
+            <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="turnstile-spin-v2" data-theme="dark" data-size="flexible"></div>
+            <input name="startedAt" type="hidden" data-contact-started />
+            <input class="contact-trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="contact-form-footer">
+              <p class="contact-consent">By sending this message, you agree that JK may use the details you provide to review and reply to you.</p>
+              <button class="primary-link contact-submit" type="submit">Send message <span aria-hidden="true">↗</span></button>
+            </div>
+            <p class="contact-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
       </section>
 
       <footer class="site-footer">
@@ -283,8 +329,38 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <a href="#top">Back to top ↑</a>
       </footer>
     </main>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer is:inline></script>
     <script>
       document.documentElement.classList.add("js-ready");
+      const contactForm = document.querySelector<HTMLFormElement>(".contact-form");
+      const contactStatus = document.querySelector<HTMLElement>(".contact-status");
+      const contactStarted = contactForm?.querySelector<HTMLInputElement>("[data-contact-started]");
+      if (contactStarted) contactStarted.value = String(Date.now());
+      contactForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!contactStatus) return;
+        contactStatus.textContent = "Checking your message…";
+        const submitButton = contactForm.querySelector<HTMLButtonElement>("button[type=submit]");
+        if (submitButton) submitButton.disabled = true;
+        try {
+          const response = await fetch(contactForm.action, {
+            method: "POST",
+            body: new FormData(contactForm),
+            headers: { Accept: "application/json" },
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.message || "The message could not be sent.");
+          contactForm.reset();
+          if (contactStarted) contactStarted.value = String(Date.now());
+          contactStatus.textContent = "Thanks for writing. Your message has been sent privately.";
+          window.turnstile?.reset();
+        } catch (error) {
+          contactStatus.textContent = error instanceof Error ? error.message : "The message could not be sent. Please try again.";
+          window.turnstile?.reset();
+        } finally {
+          if (submitButton) submitButton.disabled = false;
+        }
+      });
       const revealTargets = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal], .section-intro, .hero-actions, .hero-footer"));
       const revealTarget = (element: HTMLElement) => element.classList.add("is-visible");
       if ("IntersectionObserver" in window) {

@@ -19,5 +19,8 @@
     "astro": "7.1.3",
     "typescript": "6.0.3"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@astrojs/node": "^11.1.0"
+  }
 }

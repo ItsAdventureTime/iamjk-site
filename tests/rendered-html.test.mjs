@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the personal site as a complete static document", async () => {
-  const html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
+  const html = await readFile(new URL("../dist/client/index.html", import.meta.url), "utf8");
   assert.match(html, /<title>JK de Guzman \| A personal field guide<\/title>/i);
   assert.match(html, /A person is a <em>collection<\/em> of connections\./i);
   assert.match(html, /Language/i);
@@ -21,7 +21,11 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(html, /Windows 95/i);
   assert.match(html, /taught online English since 2019/i);
   assert.match(html, /Podman/i);
-  assert.match(html, /look me up online\. I’m not hard to find\./i);
+  assert.match(html, /contact-form/i);
+  assert.match(html, /data-action="turnstile-spin-v2"/i);
+  assert.match(html, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js/i);
+  assert.match(html, /Country or territory/i);
+  assert.match(html, /Leave an email or mobile number if you would like me to reply/i);
   assert.match(html, /stack-trace-step/i);
   assert.match(html, /Philippines/i);
   assert.doesNotMatch(html, /Marikina|1988|depression|stroke survivor|Losartan|amlodipine/i);
@@ -52,12 +56,23 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(source, /data-world-detail="A LITTLE CONTEXT"/);
   assert.match(source, /const readoutNumber = section\?\.dataset\.worldIndex/);
   assert.match(source, /const readoutTitle = section\?\.dataset\.worldReadout/);
+  assert.match(source, /turnstileSiteKey/);
+  assert.match(source, /\/api\/contact/);
+  assert.doesNotMatch(source, /TURNSTILE_SECRET_VALUE|RESEND_API_KEY_VALUE/);
+
+  const endpoint = await readFile(new URL("../src/pages/api/contact.ts", import.meta.url), "utf8");
+  assert.match(endpoint, /siteverify/);
+  assert.match(endpoint, /result\.success === true/);
+  assert.match(endpoint, /iamjk-site-contact/);
+  assert.doesNotMatch(endpoint, /website@iamjk\.site|hello@iamjk\.site/);
 
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /--accent:\s*#c8844a/i);
   assert.match(css, /fallback-orbit/i);
   assert.match(css, /trace-flow/i);
+  assert.match(css, /\.contact-form/);
+  assert.match(css, /\.cf-turnstile/);
   assert.match(css, /\.process-list li:last-child\s*\{\s*border-bottom:\s*0/i);
   assert.doesNotMatch(css, /\.card-number\s*\{[^}]*margin-bottom:\s*auto/i);
   assert.match(css, /\.card-arrow\s*\{[^}]*margin-top:\s*auto/i);
