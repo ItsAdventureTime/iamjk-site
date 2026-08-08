@@ -142,6 +142,18 @@ curl --fail --silent --show-error --head https://iamjk.site/_astro/ASSET_FROM_IN
 
 The temporary Caddy profile in the existing server configuration adds `X-Robots-Tag: noindex`. Remove its `import private_noindex` line when the site is ready for public search indexing.
 
+## Public personal context
+
+The public copy reflects the latest personal-context review dated 2026-08-08. It
+adds JK’s early Windows 95-era curiosity, online English teaching since 2019,
+interdisciplinary interests, reading habits, social need for quiet, and the
+ongoing balance between open systems and practical convenience.
+
+The site intentionally leaves out sensitive health and family-care details,
+exact city, birth year, age, unverified degree completion, credentials that are
+not needed for the personal introduction, and volatile device configuration.
+The source context file remains outside this public repository.
+
 ## GitHub CLI and verified releases
 
 Use GitHub CLI to confirm the authenticated account and repository before a
@@ -180,6 +192,8 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 
 - Node.js release status: https://nodejs.org/en/about/previous-releases
 - Astro configuration reference: https://docs.astro.build/en/reference/configuration-reference/
+- WCAG 2.2: https://www.w3.org/TR/WCAG22/
+- WCAG 2.2 animation from interactions: https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html
 - Caddy `root`: https://caddyserver.com/docs/caddyfile/directives/root
 - Caddy `file_server`: https://caddyserver.com/docs/caddyfile/directives/file_server
 - Caddy `header`: https://caddyserver.com/docs/caddyfile/directives/header

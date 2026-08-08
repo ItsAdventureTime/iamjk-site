@@ -18,10 +18,13 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(html, /Nothing Phone \(3\)/i);
   assert.match(html, /CMF Buds Pro 2/i);
   assert.match(html, /Fedora Kinoite/i);
+  assert.match(html, /Windows 95/i);
+  assert.match(html, /taught online English since 2019/i);
+  assert.match(html, /Podman/i);
   assert.match(html, /look me up online\. I’m not hard to find\./i);
   assert.match(html, /stack-trace-step/i);
   assert.match(html, /Philippines/i);
-  assert.doesNotMatch(html, /Marikina/i);
+  assert.doesNotMatch(html, /Marikina|1988|depression|stroke survivor|Losartan|amlodipine/i);
   const emailPattern = /\b[\w.%+-]+@[\w.-]+\.[A-Z]{2,}\b/i;
   assert.doesNotMatch(html, emailPattern);
   assert.doesNotMatch(html, /mailto:/i);

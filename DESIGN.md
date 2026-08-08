@@ -6,6 +6,8 @@
 
 iamjk.site is a personal field guide for Juan Karlo “JK” de Guzman. It is deliberately personal rather than a work portfolio: visitors should meet a person through his faith, language, systems curiosity, technology shifts, books, ideas, and practical way of learning.
 
+The 2026-08-08 context refresh adds public details about JK’s early Windows 95-era computing, online English teaching since 2019, interdisciplinary study interests, reading habits, need for quiet after social intensity, and preference for inspectable systems with practical convenience. Keep the site human and specific without publishing the source profile itself.
+
 ## Product and voice
 
 - Use American English (`en-US`).
@@ -127,6 +129,8 @@ Keep animations short, interruptible, and subordinate to reading. Use transforms
 - Use standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties.
 - Avoid relying on experimental `animation-timeline` features or browser-specific prefixes.
 - The source is designed for Blink, WebKit, and Gecko from a standards baseline. Direct local rendering should be verified in an available browser; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
+- Use WCAG 2.2 as the accessibility reference, especially contrast, reflow, focus visibility, and animation from interaction.
+- Keep Astro’s static output and canonical site configuration aligned with the official configuration reference.
 
 ## Change checklist
 

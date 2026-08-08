@@ -3,6 +3,10 @@
 **Reviewed:** 2026-08-08
 **Scope:** public iamjk.site source, generated static output, and Git release workflow
 
+The 2026-08-08 personal-context review informs the public copy. Only the
+non-sensitive, intentionally shareable layer belongs here. The source profile
+stays outside this repository.
+
 ## Public-content rules
 
 iamjk.site is a personal website, not a contact database.
