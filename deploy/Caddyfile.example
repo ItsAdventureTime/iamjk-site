@@ -1,0 +1,14 @@
+iamjk.site, www.iamjk.site {
+    encode zstd gzip
+
+    header {
+        Content-Security-Policy "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; media-src 'none'; object-src 'none'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests"
+        Cache-Control "public, max-age=300, must-revalidate"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+
+    reverse_proxy 127.0.0.1:4321
+}

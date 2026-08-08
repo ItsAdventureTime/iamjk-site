@@ -64,6 +64,10 @@ rsync --archive --human-readable --itemize-changes --info=progress2 --partial --
 ssh "${ssh_options[@]}" -- "$ssh_target" \
   "podman load --input '$remote_bundle' && rm -f '$remote_bundle' && systemctl --user daemon-reload && systemctl --user restart iamjk-site.service"
 
+printf 'Checking the running application container...\n'
+ssh "${ssh_options[@]}" -- "$ssh_target" \
+  "podman exec iamjk-site node -e 'fetch(\"http://127.0.0.1:4321/\").then(async response => { const html = await response.text(); if (!response.ok || !html.includes(\"contact-form\")) process.exit(1); }).catch(() => process.exit(1))'"
+
 ssh "${ssh_options[@]}" -- "$ssh_target" bunny-purge
 
 printf 'Deployment complete: %s@%s:%s\n' "$vps_user" "$vps_host" "$vps_path"

@@ -25,6 +25,7 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `Containerfile` — reproducible Node 24 production image.
 - `pnpm-workspace.yaml` — explicit allowlist for the reviewed `esbuild` and `sharp` install scripts required by the build.
 - `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
+- `deploy/Caddyfile.example` — reverse-proxy configuration for the Node application and Turnstile CSP.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
 - `scripts/deploy-vps.sh` — Podman build, rsync upload, and Bunny purge release helper.
@@ -163,9 +164,11 @@ VPS_HOST=YOUR_VPS_HOST \
 ./scripts/deploy-vps.sh
 ~~~
 
-The helper requires SSH access to the VPS and a VPS-side bunny-purge script. It
-does not look for bunny-purge on macOS and does not copy CDN credentials to the
-local machine. After rsync succeeds, it runs:
+The helper checks the running container for `contact-form` before calling the
+VPS-side bunny-purge script. This catches an old image or failed service restart
+before the CDN is purged. It requires SSH access to the VPS and a VPS-side
+`bunny-purge` script. It does not look for bunny-purge on macOS and does not
+copy CDN credentials to the local machine. After rsync succeeds, it runs:
 
 ~~~bash
 ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge
@@ -197,9 +200,11 @@ reach only the loopback-published application port.
 
 ## Caddy configuration
 
-Caddy reverse-proxies the Astro Node server. Turnstile requires its browser
-script and frame origin in the policy; the form also needs same-origin API
-requests. Do not use a policy that sets `script-src 'none'` or blocks
+Caddy reverse-proxies the Astro Node server. Do not leave the old `file_server`
+site active, because it will continue serving the previous static HTML instead
+of the container. The complete example is in `deploy/Caddyfile.example`.
+Turnstile requires its browser script and frame origin in the policy; the form
+also needs same-origin API requests. Do not use a policy that sets `script-src 'none'` or blocks
 `challenges.cloudflare.com`.
 
 Use a dedicated site snippet like this, adapting the shared security headers to your existing Caddyfile:
