@@ -150,7 +150,10 @@ sanitized source build context to the VPS, builds the standalone Node 24 Alpine
 image natively on the VPS, restarts the Quadlet service, and then invokes the
 VPS-side bunny-purge script over SSH. The rsync exclusions keep `.env` files,
 private-key/certificate files, generated output, and local agent metadata out
-of the VPS build context. Run it from the repository root:
+of the VPS build context. Before purging the CDN, it checks the new contact
+markup internally and confirms the public `GET /api/contact` route returns
+`405 Method Not Allowed`, proving Caddy reaches the Node endpoint. Run it from
+the repository root:
 
 ~~~bash
 cd ~/dev/iamjk-site

@@ -166,7 +166,10 @@ The helper checks the running container for `contact-form` before calling the
 VPS-side bunny-purge script. This catches an old image or failed service restart
 before the CDN is purged. It requires SSH access to the VPS and a VPS-side
 `bunny-purge` script. It does not look for bunny-purge on macOS and does not
-copy CDN credentials to the local machine. After rsync succeeds, it runs:
+copy CDN credentials to the local machine. It also checks the app’s `GET
+/api/contact` response and the public Caddy route; both must return the
+expected application behavior before the CDN is purged. After rsync succeeds,
+it runs:
 
 ~~~bash
 ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge

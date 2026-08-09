@@ -108,11 +108,18 @@ if [[ -z "$app_container_name" ]]; then
 fi
 printf 'Application container: %s\n' "$app_container_name"
 ssh "${ssh_options[@]}" -- "$ssh_target" \
-  "podman exec '$app_container_name' node -e 'fetch(\"http://127.0.0.1:4321/\").then(async response => { const html = await response.text(); if (!response.ok || !html.includes(\"contact-form\")) process.exit(1); }).catch(() => process.exit(1))'"
+  "podman exec '$app_container_name' node -e 'Promise.all([fetch(\"http://127.0.0.1:4321/\"), fetch(\"http://127.0.0.1:4321/api/contact\")]).then(async ([home, api]) => { const html = await home.text(); if (!home.ok || !html.includes(\"contact-form\") || !html.includes(\"keep the conversation going\") || api.status !== 405) process.exit(1); }).catch(() => process.exit(1))'"
 
 if [[ "$update_caddy" == "1" ]]; then
   ssh "${ssh_options[@]}" -- "$ssh_target" \
     "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && systemctl --user restart caddy.service"
+fi
+
+public_api_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
+  "curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://iamjk.site/api/contact" || true)"
+if [[ "$public_api_status" != "405" ]]; then
+  printf 'Public contact endpoint check failed: expected HTTP 405, got %s. Check the Caddy upstream before purging the CDN.\n' "${public_api_status:-no response}" >&2
+  exit 1
 fi
 
 ssh "${ssh_options[@]}" -- "$ssh_target" bunny-purge
