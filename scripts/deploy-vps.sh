@@ -69,7 +69,7 @@ ssh "${ssh_options[@]}" -- "$ssh_target" \
 if [[ "$update_caddy" == "1" ]]; then
   printf 'Updating the iamjk.site Caddy upstream...\n'
   ssh "${ssh_options[@]}" -- "$ssh_target" \
-    "if grep -Fq 'reverse_proxy iamjk-site:4321' '$caddy_config_path'; then :; elif grep -Fq 'reverse_proxy 127.0.0.1:4321' '$caddy_config_path'; then cp '$caddy_config_path' '$caddy_config_path.before-iamjk-network-fix.$backup_stamp' && sed -i 's/reverse_proxy 127\\.0\\.0\\.1:4321/reverse_proxy iamjk-site:4321/' '$caddy_config_path'; else echo 'Could not find the expected iamjk.site reverse_proxy directive; set UPDATE_CADDY=0 and update Caddy manually.' >&2; exit 1; fi"
+    "if grep -Fq 'header_up Host {host}' '$caddy_config_path'; then :; elif grep -Fq 'reverse_proxy iamjk-site:4321' '$caddy_config_path'; then cp '$caddy_config_path' '$caddy_config_path.before-iamjk-host-header.$backup_stamp' && sed -i '/^[[:space:]]*reverse_proxy iamjk-site:4321[[:space:]]*$/c\\    reverse_proxy iamjk-site:4321 {\\n        header_up Host {host}\\n    }' '$caddy_config_path'; elif grep -Fq 'reverse_proxy 127.0.0.1:4321' '$caddy_config_path'; then cp '$caddy_config_path' '$caddy_config_path.before-iamjk-network-fix.$backup_stamp' && sed -i 's/reverse_proxy 127\\.0\\.0\\.1:4321/reverse_proxy iamjk-site:4321/' '$caddy_config_path' && sed -i '/^[[:space:]]*reverse_proxy iamjk-site:4321[[:space:]]*$/c\\    reverse_proxy iamjk-site:4321 {\\n        header_up Host {host}\\n    }' '$caddy_config_path'; else echo 'Could not find the expected iamjk.site reverse_proxy directive; set UPDATE_CADDY=0 and update Caddy manually.' >&2; exit 1; fi"
 fi
 printf 'Synchronizing the sanitized native build context with rsync...\n'
 rsync --archive --delete --human-readable --itemize-changes --info=progress2 --partial --timeout=60 \
@@ -119,6 +119,12 @@ public_api_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
   "curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://iamjk.site/api/contact" || true)"
 if [[ "$public_api_status" != "405" ]]; then
   printf 'Public contact endpoint check failed: expected HTTP 405, got %s. Check the Caddy upstream before purging the CDN.\n' "${public_api_status:-no response}" >&2
+  exit 1
+fi
+public_post_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
+  "curl --silent --show-error --output /dev/null --write-out '%{http_code}' --request POST --header 'Origin: https://iamjk.site' --header 'Accept: application/json' --form 'name=deployment-check' --form 'country=PH' --form 'message=deployment-check' https://iamjk.site/api/contact" || true)"
+if [[ "$public_post_status" != "400" ]]; then
+  printf 'Public contact POST check failed: expected HTTP 400 validation response, got %s. Check the Caddy Host header before purging the CDN.\n' "${public_post_status:-no response}" >&2
   exit 1
 fi
 

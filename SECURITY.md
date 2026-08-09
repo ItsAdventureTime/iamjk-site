@@ -84,7 +84,9 @@ printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
 
 The Quadlet template maps these secrets to runtime-only environment variables.
 Do not publish port `4321`; Caddy should reverse-proxy to `iamjk-site:4321`
-over `caddy.network`.
+over `caddy.network` and preserve the public host with `header_up Host {host}`.
+This keeps Astro’s same-origin CSRF check enabled while allowing the public
+HTTPS origin to match the proxied request.
 
 ## Git history
 

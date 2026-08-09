@@ -95,7 +95,9 @@ The single deployment helper installs or updates the application Quadlet in
 updates only the `iamjk.site` upstream in the existing Caddyfile, and restarts
 the rootless application and Caddy services. It does not replace the shared
 Caddyfile or change any other site. Caddy should proxy `iamjk.site` to
-`iamjk-site:4321` on the shared network. Do not expose port 4321 publicly.
+`iamjk-site:4321` on the shared network and preserve the public host with
+`header_up Host {host}`. Astro uses that host while validating same-origin POST
+requests. Do not expose port 4321 publicly.
 
 For a production-style local check:
 

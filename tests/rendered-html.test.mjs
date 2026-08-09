@@ -83,6 +83,13 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(css, /\.world-readout\s*\{\s*display:\s*none/i);
   assert.doesNotMatch(css, /violet|purple|8052ff|7543ff|9b68ff/i);
 
+  const caddy = await readFile(new URL("../deploy/Caddyfile.example", import.meta.url), "utf8");
+  assert.match(caddy, /header_up Host \{host\}/i);
+
+  const deployment = await readFile(new URL("../scripts/deploy-vps.sh", import.meta.url), "utf8");
+  assert.match(deployment, /public_post_status/);
+  assert.match(deployment, /expected HTTP 400 validation response/);
+
   const favicon = await readFile(new URL("../public/favicon.svg", import.meta.url), "utf8");
   assert.match(favicon, /#050505/i);
   assert.match(favicon, /#F4F2EF/i);
