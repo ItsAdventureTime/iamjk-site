@@ -166,14 +166,15 @@ VPS_HOST=YOUR_VPS_HOST \
 ./scripts/deploy-vps.sh
 ~~~
 
-The helper checks the running container for `contact-form` before calling the
-VPS-side bunny-purge script. This catches an old image or failed service restart
-before the CDN is purged. It requires SSH access to the VPS and a VPS-side
-`bunny-purge` script. It does not look for bunny-purge on macOS and does not
-copy CDN credentials to the local machine. It also checks the app’s `GET
-/api/contact` response and the public Caddy route; both must return the
-expected application behavior before the CDN is purged. After rsync succeeds,
-it runs:
+The helper checks the running container for `contact-form`, formats and
+validates the rootless Caddyfile, gracefully reloads Caddy, and only then calls
+the VPS-side bunny-purge script. This catches an old image, invalid proxy
+configuration, or failed service restart before the CDN is purged. It requires
+SSH access to the VPS and a VPS-side `bunny-purge` script. It does not look for
+bunny-purge on macOS and does not copy CDN credentials to the local machine. It
+also checks the app’s `GET /api/contact` response and the public Caddy route;
+both must return the expected application behavior before the CDN is purged.
+After rsync succeeds, it runs:
 
 ~~~bash
 ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge
@@ -186,7 +187,8 @@ The synced build context excludes Git metadata, agent metadata, generated files,
 dependency directories, `.env` files, and common private-key/certificate
 extensions. Podman secrets remain only on the VPS.
 Set `UPDATE_CADDY=0` only when you intentionally manage the Caddy upstream
-yourself. The helper recognizes both the explicit `iamjk-site` name and
+yourself; formatting, validation, and the safe reload still run. The helper
+recognizes both the explicit `iamjk-site` name and
 Quadlet’s generated default `systemd-iamjk-site`; set `APP_CONTAINER_NAME` if
 your existing service uses another name. Set `QUADLET_DIR` or
 `CADDY_CONFIG_PATH` when your VPS uses different paths:
@@ -286,10 +288,20 @@ must never be stored or replayed.
 The `request_body` limiter is a Caddy 2.10+ directive. Keep the Caddy image
 current and let `caddy validate` reject an incompatible image before reload.
 
-Validate and reload the user service only after the config passes:
+The deployment helper first checks `caddy fmt --diff`, creates a timestamped
+backup only when formatting changes are needed, formats the host-mounted file
+through a temporary rootless Podman container, validates it with the running
+`caddy` container, and then performs a graceful reload. This is necessary
+because the permanent Caddy Quadlet mounts `/etc/caddy` read-only.
+
+Manual equivalent:
 
 ```bash
-podman run --rm --volume /home/jk/caddy/conf:/etc/caddy:ro,Z docker.io/library/caddy:alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+CADDY_IMAGE="$(podman inspect --format '{{.ImageName}}' caddy)"
+podman run --rm --entrypoint caddy \
+  --volume /home/jk/caddy/conf:/etc/caddy:rw,Z \
+  "$CADDY_IMAGE" fmt --overwrite /etc/caddy/Caddyfile
+podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl --user daemon-reload
 podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl --user status caddy.service --no-pager

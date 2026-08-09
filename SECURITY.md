@@ -98,6 +98,10 @@ application limit and preventing oversized uploads from reaching Astro.
 The deployment helper adds this matcher idempotently when `UPDATE_CADDY=1` and
 backs up the shared Caddyfile before changing it. Review the backup and validate
 the full shared Caddyfile before reloading Caddy.
+Because the Caddy Quadlet mounts `/etc/caddy` read-only, formatting uses a
+temporary rootless Podman container with only the Caddy config directory mounted
+read-write. Validation runs through `podman exec caddy caddy validate`, and the
+running container is changed only through a graceful `caddy reload`.
 
 ## Git history
 
@@ -174,7 +178,7 @@ shell history.
 The canonical release path runs tests on macOS through Podman, transfers a
 sanitized source build context to the VPS, builds the standalone Node 24 Alpine
 image natively on the VPS, restarts the application Quadlet, gracefully reloads
-the running Caddy configuration, and then invokes the
+the running Caddy configuration only after formatting and validation, and then invokes the
 VPS-side bunny-purge script over SSH. The rsync exclusions keep `.env` files,
 private-key/certificate files, generated output, and local agent metadata out
 of the VPS build context. Before purging the CDN, it checks the new contact

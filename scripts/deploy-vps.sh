@@ -283,16 +283,62 @@ printf 'Application container: %s\n' "$app_container_name"
 ssh "${ssh_options[@]}" -- "$ssh_target" \
   "podman exec '$app_container_name' node -e 'Promise.all([fetch(\"http://127.0.0.1:4321/\"), fetch(\"http://127.0.0.1:4321/api/contact\")]).then(async ([home, api]) => { const html = await home.text(); if (!home.ok || !html.includes(\"contact-form\") || !html.includes(\"keep the conversation going\") || api.status !== 405) process.exit(1); }).catch(() => process.exit(1))'"
 
-if [[ "$update_caddy" == "1" ]]; then
-  if ! ssh "${ssh_options[@]}" -- "$ssh_target" \
-    "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && if systemctl --user is-active --quiet caddy.service; then podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; else systemctl --user restart caddy.service; fi"; then
-    printf 'Caddy reload/restart failed. Capturing rootless service diagnostics...\n' >&2
-    ssh "${ssh_options[@]}" -- "$ssh_target" \
-      "systemctl --user status caddy.service --no-pager || true; journalctl --user -u caddy.service -n 120 --no-pager || true; podman ps --all --format 'table {{.Names}}\\t{{.Status}}'" >&2
-    exit 1
-  fi
+printf 'Formatting and validating the rootless Caddyfile...\n'
+if ! ssh "${ssh_options[@]}" -- "$ssh_target" "bash -s -- '$caddy_config_path' '$backup_stamp'" <<'REMOTE_CADDY_FORMAT'
+set -Eeuo pipefail
+
+caddy_config_path="$1"
+backup_stamp="$2"
+caddy_config_dir="${caddy_config_path%/*}"
+caddy_image="$(podman inspect --format '{{.ImageName}}' caddy 2>/dev/null || true)"
+if [[ -z "$caddy_image" ]]; then
+  caddy_image="docker.io/library/caddy:alpine"
 fi
 
+caddy_format_backup="$caddy_config_path.before-iamjk-site-format.$backup_stamp"
+format_changed=0
+
+if podman run --rm --entrypoint caddy \
+  --volume "$caddy_config_dir:/etc/caddy:rw,Z" \
+  "$caddy_image" fmt --diff /etc/caddy/Caddyfile; then
+  :
+else
+  fmt_status=$?
+  if [[ "$fmt_status" != "1" ]]; then
+    printf 'Caddy formatting check failed with status %s.\n' "$fmt_status" >&2
+    exit "$fmt_status"
+  fi
+
+  cp -- "$caddy_config_path" "$caddy_format_backup"
+  if ! podman run --rm --entrypoint caddy \
+    --volume "$caddy_config_dir:/etc/caddy:rw,Z" \
+    "$caddy_image" fmt --overwrite /etc/caddy/Caddyfile; then
+    cp -- "$caddy_format_backup" "$caddy_config_path"
+    exit 1
+  fi
+  format_changed=1
+fi
+
+if ! podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+  if (( format_changed )); then
+    cp -- "$caddy_format_backup" "$caddy_config_path"
+  fi
+  exit 1
+fi
+
+systemctl --user daemon-reload
+if systemctl --user is-active --quiet caddy.service; then
+  podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+else
+  systemctl --user restart caddy.service
+fi
+REMOTE_CADDY_FORMAT
+then
+  printf 'Caddy format/validate/reload failed. Capturing rootless service diagnostics...\n' >&2
+  ssh "${ssh_options[@]}" -- "$ssh_target" \
+    "systemctl --user status caddy.service --no-pager || true; journalctl --user -u caddy.service -n 120 --no-pager || true; podman ps --all --format 'table {{.Names}}\\t{{.Status}}'" >&2
+  exit 1
+fi
 public_api_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
   "curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://iamjk.site/api/contact" || true)"
 if [[ "$public_api_status" != "405" ]]; then

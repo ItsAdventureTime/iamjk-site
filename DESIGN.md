@@ -147,7 +147,7 @@ Before accepting a visual change:
 6. Check keyboard focus, reduced motion, and no-script behavior.
 7. Confirm no blur, backdrop blur, shadow, purple/violet palette drift, city-level location, age/year of birth, or email address has returned.
 8. Review the diff and keep the generated `dist/` output out of Git.
-9. For releases, use `scripts/deploy-vps.sh` so the pinned Node 24 Alpine Podman build uses an isolated Linux `node_modules` tmpfs, the VPS builds natively, Caddy reloads gracefully, endpoint smoke checks run, and only then does the remote VPS Bunny purge happen.
+9. For releases, use `scripts/deploy-vps.sh` so the pinned Node 24 Alpine Podman build uses an isolated Linux `node_modules` tmpfs, the VPS builds natively, the rootless Caddyfile is formatted and validated before a graceful reload, endpoint smoke checks run, and only then does the remote VPS Bunny purge happen.
 
 ## Implementation source
 

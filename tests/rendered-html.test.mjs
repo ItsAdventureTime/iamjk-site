@@ -110,6 +110,10 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(deployment, /max_size 16KB/);
   assert.match(deployment, /iamjk\[\.\]site/);
   assert.match(deployment, /before-iamjk-site/);
+  assert.match(deployment, /fmt --diff/);
+  assert.match(deployment, /fmt --overwrite/);
+  assert.match(deployment, /:rw,Z/);
+  assert.match(deployment, /podman exec caddy caddy validate/);
 
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
   const security = await readFile(new URL("../SECURITY.md", import.meta.url), "utf8");
