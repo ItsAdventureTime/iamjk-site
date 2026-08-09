@@ -296,10 +296,16 @@ if [[ -z "$caddy_image" ]]; then
 fi
 
 caddy_format_backup="$caddy_config_path.before-iamjk-site-format.$backup_stamp"
+caddy_format_volume="$caddy_config_dir:/etc/caddy:rw"
 format_changed=0
 
+# The permanent Caddy Quadlet already applies :Z to this directory. Do not
+# relabel it from a second container: :Z creates a private SELinux label and
+# can make the live Caddy mount unreadable. Rootless Podman maps container root
+# to the invoking VPS user, which owns the host-mounted Caddyfile.
 if podman run --rm --entrypoint caddy \
-  --volume "$caddy_config_dir:/etc/caddy:rw,Z" \
+  --user 0 --userns=host \
+  --volume "$caddy_format_volume" \
   "$caddy_image" fmt --diff /etc/caddy/Caddyfile; then
   :
 else
@@ -311,7 +317,8 @@ else
 
   cp -- "$caddy_config_path" "$caddy_format_backup"
   if ! podman run --rm --entrypoint caddy \
-    --volume "$caddy_config_dir:/etc/caddy:rw,Z" \
+    --user 0 --userns=host \
+    --volume "$caddy_format_volume" \
     "$caddy_image" fmt --overwrite /etc/caddy/Caddyfile; then
     cp -- "$caddy_format_backup" "$caddy_config_path"
     exit 1

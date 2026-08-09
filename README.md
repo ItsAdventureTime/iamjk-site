@@ -291,7 +291,11 @@ current and let `caddy validate` reject an incompatible image before reload.
 The deployment helper first checks `caddy fmt --diff`, creates a timestamped
 backup only when formatting changes are needed, formats the host-mounted file
 through a temporary rootless Podman container, validates it with the running
-`caddy` container, and then performs a graceful reload. This is necessary
+`caddy` container, and then performs a graceful reload. The formatter runs as
+UID 0 inside the rootless user namespace so it can write the VPS user’s
+host-mounted file. It deliberately does not add `:Z` to this second mount:
+the permanent Caddy Quadlet already labels the directory, and relabeling it
+again can make the live read-only Caddy mount unreadable. This is necessary
 because the permanent Caddy Quadlet mounts `/etc/caddy` read-only.
 
 Manual equivalent:
@@ -299,7 +303,8 @@ Manual equivalent:
 ```bash
 CADDY_IMAGE="$(podman inspect --format '{{.ImageName}}' caddy)"
 podman run --rm --entrypoint caddy \
-  --volume /home/jk/caddy/conf:/etc/caddy:rw,Z \
+  --user 0 --userns=host \
+  --volume /home/jk/caddy/conf:/etc/caddy:rw \
   "$CADDY_IMAGE" fmt --overwrite /etc/caddy/Caddyfile
 podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl --user daemon-reload

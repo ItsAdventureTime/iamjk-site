@@ -100,8 +100,12 @@ backs up the shared Caddyfile before changing it. Review the backup and validate
 the full shared Caddyfile before reloading Caddy.
 Because the Caddy Quadlet mounts `/etc/caddy` read-only, formatting uses a
 temporary rootless Podman container with only the Caddy config directory mounted
-read-write. Validation runs through `podman exec caddy caddy validate`, and the
-running container is changed only through a graceful `caddy reload`.
+read-write. The formatter uses `--user 0 --userns=host` so rootless Podman maps
+the process to the VPS user who owns the host files. It omits `:Z` because the
+permanent Quadlet has already labeled this shared directory; a second private
+relabel can make the live Caddy container lose read access. Validation runs
+through `podman exec caddy caddy validate`, and the running container is changed
+only through a graceful `caddy reload`.
 
 ## Git history
 

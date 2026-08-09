@@ -112,7 +112,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(deployment, /before-iamjk-site/);
   assert.match(deployment, /fmt --diff/);
   assert.match(deployment, /fmt --overwrite/);
-  assert.match(deployment, /:rw,Z/);
+  assert.match(deployment, /--user 0 --userns=host/);
+  assert.match(deployment, /caddy_format_volume=.*:rw/);
+  assert.doesNotMatch(deployment, /:rw,Z/);
   assert.match(deployment, /podman exec caddy caddy validate/);
 
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
