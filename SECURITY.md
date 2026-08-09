@@ -61,7 +61,9 @@ data is impossible to add later.
 
 ## Contact endpoint
 
-The browser exposes only the public Turnstile site key. The server validates
+The browser exposes only the public Turnstile site key. The browser submits
+same-origin JSON rather than a simple HTML form post, and the endpoint requires
+the exact production `Origin` header. The server validates
 each token at Cloudflare’s Siteverify endpoint before calling Resend. Tokens
 are single-use and short-lived. The endpoint also requires name, country, and
 message; caps field and request sizes; rejects a honeypot and implausibly fast
@@ -87,10 +89,10 @@ runs with `NoNewPrivileges=true`, drops all Linux capabilities, and uses a
 read-only root filesystem with a private `/tmp` tmpfs.
 Do not publish port `4321`; Caddy should reverse-proxy to `iamjk-site:4321`
 over `caddy.network` and preserve the public host with `header_up Host {host}`.
-This keeps Astro’s same-origin CSRF check enabled while allowing the public
-HTTPS origin to match the proxied request.
-The Astro configuration explicitly keeps `security.checkOrigin: true`; do not
-disable it as a workaround for proxy configuration.
+The JSON request avoids Astro’s form-origin check being confused by the HTTP
+hop between Caddy and the Node adapter. Astro’s `security.checkOrigin: true`
+remains enabled for other form-like SSR requests; do not disable it as a
+general workaround for proxy configuration.
 The Caddy site block must also mark `/api/*` as `private, no-store` and set
 `CDN-Cache-Control: no-store` so contact responses cannot be cached at the edge.
 It must cap the `/api/*` request body at `16KB` before proxying, matching the

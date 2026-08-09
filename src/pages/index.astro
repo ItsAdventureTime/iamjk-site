@@ -346,8 +346,8 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         try {
           const response = await fetch(contactForm.action, {
             method: "POST",
-            body: new FormData(contactForm),
-            headers: { Accept: "application/json" },
+            body: JSON.stringify(Object.fromEntries(new FormData(contactForm).entries())),
+            headers: { Accept: "application/json", "Content-Type": "application/json" },
           });
           const result = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(result.message || "I couldn’t send that just now. Please try again in a moment.");

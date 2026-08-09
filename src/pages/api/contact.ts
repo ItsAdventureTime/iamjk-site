@@ -19,7 +19,7 @@ function secret(name: string): string {
   throw new Error(`Missing runtime secret: ${name}`);
 }
 
-function textValue(value: FormDataEntryValue | null, maxLength: number): string {
+function textValue(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return "";
   return value.normalize("NFKC").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, maxLength);
 }
@@ -55,31 +55,47 @@ async function verifyTurnstile(token: string, request: Request, secretKey: strin
 export const POST: APIRoute = async ({ request }) => {
   const requestId = crypto.randomUUID();
   const origin = request.headers.get("origin");
-  if (origin && origin !== "https://iamjk.site") {
+  if (origin !== "https://iamjk.site") {
     return Response.json({ message: "Please submit the form normally." }, { status: 403 });
   }
   if (rateLimited(requestIp(request))) {
     return Response.json({ message: "Please wait a little before trying again." }, { status: 429, headers: { "retry-after": "900" } });
   }
-  if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/x-www-form-urlencoded" && !request.headers.get("content-type")?.startsWith("multipart/form-data")) {
+  const contentType = request.headers.get("content-type") || "";
+  const mediaType = contentType.split(";")[0].trim().toLowerCase();
+  const isJson = mediaType === "application/json";
+  const isForm = mediaType === "application/x-www-form-urlencoded" || mediaType === "multipart/form-data";
+  if (!isJson && !isForm) {
     return Response.json({ message: "Please submit the form normally." }, { status: 415 });
   }
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > MAX_BODY_BYTES) return Response.json({ message: "Your message is too large." }, { status: 413 });
 
   try {
-    const contentType = request.headers.get("content-type") || "";
     const rawBody = await request.arrayBuffer();
     if (rawBody.byteLength > MAX_BODY_BYTES) return Response.json({ message: "Your message is too large." }, { status: 413 });
-    const form = await new Response(rawBody, { headers: { "content-type": contentType } }).formData();
-    const startedAt = Number(textValue(form.get("startedAt"), 20));
-    const name = textValue(form.get("name"), MAX_NAME_LENGTH);
-    const country = textValue(form.get("country"), 2).toUpperCase();
-    const email = textValue(form.get("email"), MAX_EMAIL_LENGTH).toLowerCase();
-    const mobile = textValue(form.get("mobile"), MAX_MOBILE_LENGTH);
-    const message = textValue(form.get("message"), MAX_MESSAGE_LENGTH);
-    const website = textValue(form.get("website"), 100);
-    const token = textValue(form.get("cf-turnstile-response"), 2_048);
+    let fields: Record<string, unknown>;
+    if (isJson) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(new TextDecoder().decode(rawBody)) as unknown;
+      } catch {
+        return Response.json({ message: "Please check the highlighted fields and try again." }, { status: 400 });
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return Response.json({ message: "Please check the highlighted fields and try again." }, { status: 400 });
+      fields = parsed as Record<string, unknown>;
+    } else {
+      const form = await new Response(rawBody, { headers: { "content-type": contentType } }).formData();
+      fields = Object.fromEntries(form.entries());
+    }
+    const startedAt = Number(textValue(fields.startedAt, 20));
+    const name = textValue(fields.name, MAX_NAME_LENGTH);
+    const country = textValue(fields.country, 2).toUpperCase();
+    const email = textValue(fields.email, MAX_EMAIL_LENGTH).toLowerCase();
+    const mobile = textValue(fields.mobile, MAX_MOBILE_LENGTH);
+    const message = textValue(fields.message, MAX_MESSAGE_LENGTH);
+    const website = textValue(fields.website, 100);
+    const token = textValue(fields["cf-turnstile-response"], 2_048);
     if (website || (startedAt > 0 && Date.now() - startedAt < MIN_COMPLETION_MS)) return Response.json({ message: "Please try again." }, { status: 400 });
     if (!name || !validCountryCodes.has(country) || !message || (email && !validEmail(email)) || !token) return Response.json({ message: "Please check the highlighted fields and try again." }, { status: 400 });
     if (!(await verifyTurnstile(token, request, secret("TURNSTILE_SECRET")))) return Response.json({ message: "We could not verify this submission. Please try again." }, { status: 403 });

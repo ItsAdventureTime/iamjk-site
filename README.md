@@ -21,7 +21,7 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `src/pages/index.astro` — page structure, copy, metadata, Canvas 2D script, and section state.
 - `app/globals.css` — design tokens, responsive layout, motifs, surfaces, motion, and browser fallbacks.
 - `astro.config.mjs` — Node standalone output and canonical site URL.
-- `src/pages/api/contact.ts` — same-origin contact endpoint, Turnstile verification, validation, throttling, and Resend delivery.
+- `src/pages/api/contact.ts` — same-origin JSON contact endpoint, Turnstile verification, validation, throttling, and Resend delivery.
 - `Containerfile` — reproducible Node 24 production image.
 - `pnpm-workspace.yaml` — explicit allowlist for the reviewed `esbuild` and `sharp` install scripts required by the build.
 - `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
@@ -71,8 +71,10 @@ email-address exclusions, and the no-blur design constraints.
 
 ## Contact form secrets and Turnstile
 
-The browser receives only the public Turnstile site key. The server validates
-each single-use token at Cloudflare before calling Resend. The endpoint also
+The browser receives only the public Turnstile site key. The browser submits
+same-origin JSON rather than a simple HTML form post, and the endpoint requires
+the exact production `Origin` header. The server validates each single-use
+token at Cloudflare before calling Resend. The endpoint also
 enforces the required name, country, and message fields; caps input sizes;
 rejects the honeypot and fast submissions; checks same-origin requests; and
 throttles each forwarded client address. Resend failures return a short
@@ -98,8 +100,8 @@ the running Caddy service. A timestamped Caddyfile backup is created only when
 the helper must make a proxy change. It does not replace the shared Caddyfile
 or change any other site. Caddy should proxy `iamjk.site` to
 `iamjk-site:4321` on the shared network and preserve the public host with
-`header_up Host {host}`. Astro uses that host while validating same-origin POST
-requests. Do not expose port 4321 publicly.
+`header_up Host {host}`. The endpoint independently requires the exact public
+`Origin` and the browser submits JSON. Do not expose port 4321 publicly.
 
 For a production-style local check:
 
@@ -288,10 +290,12 @@ must never be stored or replayed.
 The `request_body` limiter is a Caddy 2.10+ directive. Keep the Caddy image
 current and let `caddy validate` reject an incompatible image before reload.
 
-The deployment helper first checks `caddy fmt --diff`, creates a timestamped
-backup only when formatting changes are needed, formats the host-mounted file
-through a temporary rootless Podman container, validates it both there and with
-the running `caddy` container, and then performs a graceful reload. The
+The deployment helper snapshots the host-mounted file, runs `caddy fmt
+--overwrite`, and keeps a timestamped backup only when formatting changes are
+needed. It validates the formatted file both in a temporary rootless Podman
+container and with the running `caddy` container, then performs a graceful
+reload. The browser’s JSON submission also avoids Astro’s form-origin check
+being confused by the HTTP hop between Caddy and the Node adapter. The
 temporary container has no network access and disables SELinux separation only
 for this narrow host-file operation. The formatter runs as UID 0 inside the
 rootless user namespace so it can write the VPS user’s host-mounted file. It

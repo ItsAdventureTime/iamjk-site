@@ -296,6 +296,7 @@ if [[ -z "$caddy_image" ]]; then
 fi
 
 caddy_format_backup="$caddy_config_path.before-iamjk-site-format.$backup_stamp"
+caddy_format_snapshot="$caddy_format_backup.pending"
 caddy_format_volume="$caddy_config_dir:/etc/caddy:rw"
 format_changed=0
 caddy_restarted=0
@@ -320,18 +321,18 @@ restore_format_backup() {
 # relabel it from a second container: :Z creates a private SELinux label and
 # can make the live Caddy mount unreadable. Rootless Podman maps container root
 # to the invoking VPS user, which owns the host-mounted Caddyfile.
-if caddy_temp_run fmt --diff /etc/caddy/Caddyfile; then
-  :
+cp -- "$caddy_config_path" "$caddy_format_snapshot"
+if ! caddy_temp_run fmt --overwrite /etc/caddy/Caddyfile; then
+  cp -- "$caddy_format_snapshot" "$caddy_config_path"
+  rm -f -- "$caddy_format_snapshot"
+  exit 1
+fi
+if cmp -s -- "$caddy_format_snapshot" "$caddy_config_path"; then
+  rm -f -- "$caddy_format_snapshot"
 else
-  fmt_status=$?
-  if [[ "$fmt_status" != "1" ]]; then
-    printf 'Caddy formatting check failed with status %s.\n' "$fmt_status" >&2
-    exit "$fmt_status"
-  fi
-
-  cp -- "$caddy_config_path" "$caddy_format_backup"
-  if ! caddy_temp_run fmt --overwrite /etc/caddy/Caddyfile; then
-    restore_format_backup
+  if ! mv -- "$caddy_format_snapshot" "$caddy_format_backup"; then
+    cp -- "$caddy_format_snapshot" "$caddy_config_path"
+    rm -f -- "$caddy_format_snapshot"
     exit 1
   fi
   format_changed=1
@@ -376,7 +377,7 @@ if [[ "$public_api_status" != "405" ]]; then
   exit 1
 fi
 public_post_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
-  "curl --silent --show-error --output /dev/null --write-out '%{http_code}' --request POST --header 'Origin: https://iamjk.site' --header 'Accept: application/json' --form 'name=deployment-check' --form 'country=PH' --form 'message=deployment-check' https://iamjk.site/api/contact" || true)"
+  "curl --silent --show-error --output /dev/null --write-out '%{http_code}' --request POST --header 'Origin: https://iamjk.site' --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{\"name\":\"deployment-check\",\"country\":\"PH\",\"message\":\"deployment-check\"}' https://iamjk.site/api/contact" || true)"
 if [[ "$public_post_status" != "400" ]]; then
   printf 'Public contact POST check failed: expected HTTP 400 validation response, got %s. Check the Caddy Host header before purging the CDN.\n' "${public_post_status:-no response}" >&2
   exit 1

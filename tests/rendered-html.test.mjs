@@ -58,6 +58,7 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(source, /const readoutTitle = section\?\.dataset\.worldReadout/);
   assert.match(source, /turnstileSiteKey/);
   assert.match(source, /\/api\/contact/);
+  assert.match(source, /Content-Type.*application.json/);
   assert.doesNotMatch(source, /TURNSTILE_SECRET_VALUE|RESEND_API_KEY_VALUE/);
 
   const endpoint = await readFile(new URL("../src/pages/api/contact.ts", import.meta.url), "utf8");
@@ -66,6 +67,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(endpoint, /iamjk-site-contact/);
   assert.match(endpoint, /idempotency-key/);
   assert.match(endpoint, /requestId/);
+  assert.match(endpoint, /origin !==/);
+  assert.match(endpoint, /https:\/\/iamjk\.site/);
+  assert.match(endpoint, /application/);
   assert.doesNotMatch(endpoint, /website@iamjk\.site|hello@iamjk\.site/);
 
   const astroConfig = await readFile(new URL("../astro.config.mjs", import.meta.url), "utf8");
@@ -110,8 +114,10 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(deployment, /max_size 16KB/);
   assert.match(deployment, /iamjk\[\.\]site/);
   assert.match(deployment, /before-iamjk-site/);
-  assert.match(deployment, /fmt --diff/);
   assert.match(deployment, /fmt --overwrite/);
+  assert.match(deployment, /caddy_format_snapshot/);
+  assert.match(deployment, /cmp -s/);
+  assert.match(deployment, /Content-Type.*application.json/);
   assert.match(deployment, /--user 0 --userns=host/);
   assert.match(deployment, /caddy_format_volume=.*:rw/);
   assert.match(deployment, /--network none --security-opt label=disable/);
