@@ -114,6 +114,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(deployment, /fmt --overwrite/);
   assert.match(deployment, /--user 0 --userns=host/);
   assert.match(deployment, /caddy_format_volume=.*:rw/);
+  assert.match(deployment, /--network none --security-opt label=disable/);
+  assert.match(deployment, /caddy_temp_run validate --config/);
+  assert.match(deployment, /podman exec caddy test -r/);
   assert.doesNotMatch(deployment, /:rw,Z/);
   assert.match(deployment, /podman exec caddy caddy validate/);
 

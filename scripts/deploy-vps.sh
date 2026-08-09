@@ -298,15 +298,29 @@ fi
 caddy_format_backup="$caddy_config_path.before-iamjk-site-format.$backup_stamp"
 caddy_format_volume="$caddy_config_dir:/etc/caddy:rw"
 format_changed=0
+caddy_restarted=0
+
+caddy_temp_run() {
+  podman run --rm --network none --security-opt label=disable \
+    --user 0 --userns=host --entrypoint caddy \
+    --volume "$caddy_format_volume" \
+    "$caddy_image" "$@"
+}
+
+restore_format_backup() {
+  if (( format_changed )); then
+    cp -- "$caddy_format_backup" "$caddy_config_path"
+    if (( caddy_restarted )); then
+      systemctl --user restart caddy.service
+    fi
+  fi
+}
 
 # The permanent Caddy Quadlet already applies :Z to this directory. Do not
 # relabel it from a second container: :Z creates a private SELinux label and
 # can make the live Caddy mount unreadable. Rootless Podman maps container root
 # to the invoking VPS user, which owns the host-mounted Caddyfile.
-if podman run --rm --entrypoint caddy \
-  --user 0 --userns=host \
-  --volume "$caddy_format_volume" \
-  "$caddy_image" fmt --diff /etc/caddy/Caddyfile; then
+if caddy_temp_run fmt --diff /etc/caddy/Caddyfile; then
   :
 else
   fmt_status=$?
@@ -316,20 +330,29 @@ else
   fi
 
   cp -- "$caddy_config_path" "$caddy_format_backup"
-  if ! podman run --rm --entrypoint caddy \
-    --user 0 --userns=host \
-    --volume "$caddy_format_volume" \
-    "$caddy_image" fmt --overwrite /etc/caddy/Caddyfile; then
-    cp -- "$caddy_format_backup" "$caddy_config_path"
+  if ! caddy_temp_run fmt --overwrite /etc/caddy/Caddyfile; then
+    restore_format_backup
     exit 1
   fi
   format_changed=1
 fi
 
-if ! podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
-  if (( format_changed )); then
-    cp -- "$caddy_format_backup" "$caddy_config_path"
+if ! caddy_temp_run validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+  restore_format_backup
+  exit 1
+fi
+
+if ! podman exec caddy test -r /etc/caddy/Caddyfile; then
+  printf 'Caddy cannot read its mounted Caddyfile; reapplying the Quadlet mount label.\n' >&2
+  if ! systemctl --user restart caddy.service; then
+    restore_format_backup
+    exit 1
   fi
+  caddy_restarted=1
+fi
+
+if ! podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+  restore_format_backup
   exit 1
 fi
 

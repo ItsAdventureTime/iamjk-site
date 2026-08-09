@@ -103,9 +103,12 @@ temporary rootless Podman container with only the Caddy config directory mounted
 read-write. The formatter uses `--user 0 --userns=host` so rootless Podman maps
 the process to the VPS user who owns the host files. It omits `:Z` because the
 permanent Quadlet has already labeled this shared directory; a second private
-relabel can make the live Caddy container lose read access. Validation runs
-through `podman exec caddy caddy validate`, and the running container is changed
-only through a graceful `caddy reload`.
+relabel can make the live Caddy container lose read access. The temporary
+formatter/validator has no network access and disables SELinux separation only
+for this narrow host-file operation. The helper repairs an existing unreadable
+live mount by restarting the Caddy Quadlet, then validates through
+`podman exec caddy caddy validate`; normal configuration changes still reach
+the running container only through a graceful `caddy reload`.
 
 ## Git history
 

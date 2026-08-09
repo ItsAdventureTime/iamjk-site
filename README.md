@@ -290,10 +290,12 @@ current and let `caddy validate` reject an incompatible image before reload.
 
 The deployment helper first checks `caddy fmt --diff`, creates a timestamped
 backup only when formatting changes are needed, formats the host-mounted file
-through a temporary rootless Podman container, validates it with the running
-`caddy` container, and then performs a graceful reload. The formatter runs as
-UID 0 inside the rootless user namespace so it can write the VPS user’s
-host-mounted file. It deliberately does not add `:Z` to this second mount:
+through a temporary rootless Podman container, validates it both there and with
+the running `caddy` container, and then performs a graceful reload. The
+temporary container has no network access and disables SELinux separation only
+for this narrow host-file operation. The formatter runs as UID 0 inside the
+rootless user namespace so it can write the VPS user’s host-mounted file. It
+deliberately does not add `:Z` to this second mount:
 the permanent Caddy Quadlet already labels the directory, and relabeling it
 again can make the live read-only Caddy mount unreadable. This is necessary
 because the permanent Caddy Quadlet mounts `/etc/caddy` read-only.
@@ -303,9 +305,16 @@ Manual equivalent:
 ```bash
 CADDY_IMAGE="$(podman inspect --format '{{.ImageName}}' caddy)"
 podman run --rm --entrypoint caddy \
+  --network none --security-opt label=disable \
   --user 0 --userns=host \
   --volume /home/jk/caddy/conf:/etc/caddy:rw \
   "$CADDY_IMAGE" fmt --overwrite /etc/caddy/Caddyfile
+podman run --rm --entrypoint caddy \
+  --network none --security-opt label=disable \
+  --user 0 --userns=host \
+  --volume /home/jk/caddy/conf:/etc/caddy:rw \
+  "$CADDY_IMAGE" validate --config /etc/caddy/Caddyfile --adapter caddyfile
+podman exec caddy test -r /etc/caddy/Caddyfile || systemctl --user restart caddy.service
 podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl --user daemon-reload
 podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
