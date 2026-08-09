@@ -302,13 +302,20 @@ sign commits. The existing 1Password SSH signer is separate and is used only for
 optional commit signatures.
 
 ```bash
+git add README.md SECURITY.md
+git commit -m "Describe the change"
 gh auth status
 gh auth setup-git --hostname github.com
 gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
 git remote set-url origin https://github.com/ItsAdventureTime/iamjk-site.git
-git log -1 --show-signature
 git push origin main
 ```
+
+`git add` and `git commit` are local repository operations. GitHub CLI manages
+the authenticated HTTPS credential for the final Git transport; `git push` is
+the Git operation that publishes the local commit. Do not use `gh repo sync` for
+this release path because it synchronizes from a remote source into a local or
+destination repository rather than publishing the local commit.
 
 See [SECURITY.md](SECURITY.md) for the full signing, privacy-scan, and
 push-protection checklist.

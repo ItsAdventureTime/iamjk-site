@@ -116,12 +116,20 @@ account, configure Git to use GitHub CLI credentials, verify the remote, then
 push the local commit:
 
 ```bash
+git add README.md SECURITY.md
+git commit -m "Describe the change"
 gh auth status
 gh auth setup-git --hostname github.com
 gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
 git remote set-url origin https://github.com/ItsAdventureTime/iamjk-site.git
 git push origin main
 ```
+
+`git add` and `git commit` create the local release commit. `gh auth status`
+and `gh auth setup-git` establish the authenticated GitHub CLI credential, and
+`git push` publishes over the HTTPS remote. Do not use an SSH GitHub remote or
+`gh repo sync` for this workflow. `gh repo sync` synchronizes from a source
+repository; it is not the normal command for publishing local commits.
 
 `gh auth setup-git` configures GitHub CLI credentials for Git transport; it does
 not create a cryptographic signature. Commit signing is separate from remote
