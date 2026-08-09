@@ -82,11 +82,22 @@ printf '%s' 'website@iamjk.site' | podman secret create iamjk-site_resend-from -
 printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
 ```
 
-The Quadlet template maps these secrets to runtime-only environment variables.
+The Quadlet template maps these secrets to runtime-only environment variables,
+runs with `NoNewPrivileges=true`, drops all Linux capabilities, and uses a
+read-only root filesystem with a private `/tmp` tmpfs.
 Do not publish port `4321`; Caddy should reverse-proxy to `iamjk-site:4321`
 over `caddy.network` and preserve the public host with `header_up Host {host}`.
 This keeps Astro’s same-origin CSRF check enabled while allowing the public
 HTTPS origin to match the proxied request.
+The Astro configuration explicitly keeps `security.checkOrigin: true`; do not
+disable it as a workaround for proxy configuration.
+The Caddy site block must also mark `/api/*` as `private, no-store` and set
+`CDN-Cache-Control: no-store` so contact responses cannot be cached at the edge.
+It must cap the `/api/*` request body at `16KB` before proxying, matching the
+application limit and preventing oversized uploads from reaching Astro.
+The deployment helper adds this matcher idempotently when `UPDATE_CADDY=1` and
+backs up the shared Caddyfile before changing it. Review the backup and validate
+the full shared Caddyfile before reloading Caddy.
 
 ## Git history
 

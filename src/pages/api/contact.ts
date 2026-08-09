@@ -49,13 +49,13 @@ async function verifyTurnstile(token: string, request: Request, secretKey: strin
   });
   if (!response.ok) return false;
   const result = await response.json() as { success?: boolean; hostname?: string; action?: string };
-  return result.success === true && (!result.hostname || ["iamjk.site", "www.iamjk.site"].includes(result.hostname)) && (!result.action || result.action === "turnstile-spin-v2");
+  return result.success === true && (!result.hostname || result.hostname === "iamjk.site") && (!result.action || result.action === "turnstile-spin-v2");
 }
 
 export const POST: APIRoute = async ({ request }) => {
   const requestId = crypto.randomUUID();
   const origin = request.headers.get("origin");
-  if (origin && !["https://iamjk.site", "https://www.iamjk.site"].includes(origin)) {
+  if (origin && origin !== "https://iamjk.site") {
     return Response.json({ message: "Please submit the form normally." }, { status: 403 });
   }
   if (rateLimited(requestIp(request))) {

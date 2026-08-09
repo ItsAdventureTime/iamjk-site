@@ -92,10 +92,11 @@ printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
 
 The single deployment helper installs or updates the application Quadlet in
 `~/.config/containers/systemd/iamjk-site/`, joins it to `caddy.network`,
-updates only the `iamjk.site` upstream in the existing Caddyfile, and restarts
-  the rootless application and gracefully reloads the running Caddy service. It
-  does not replace the shared
-Caddyfile or change any other site. Caddy should proxy `iamjk.site` to
+updates only the `iamjk.site` upstream and its `/api/*` cache policy in the
+existing Caddyfile, restarts the rootless application, and gracefully reloads
+the running Caddy service. A timestamped Caddyfile backup is created only when
+the helper must make a proxy change. It does not replace the shared Caddyfile
+or change any other site. Caddy should proxy `iamjk.site` to
 `iamjk-site:4321` on the shared network and preserve the public host with
 `header_up Host {host}`. Astro uses that host while validating same-origin POST
 requests. Do not expose port 4321 publicly.
@@ -239,40 +240,65 @@ Turnstile requires its browser script and frame origin in the policy; the form
 also needs same-origin API requests. Do not use a policy that sets `script-src 'none'` or blocks
 `challenges.cloudflare.com`.
 
-Use a dedicated site snippet like this, adapting the shared security headers to your existing Caddyfile:
+Use a dedicated reverse-proxy site block like this, adapting the shared
+security headers to your existing Caddyfile:
 
 ```caddyfile
-(iamjk_static_site) {
-    import common_security
+iamjk.site {
 
     header {
+        Strict-Transport-Security "max-age=31536000"
         >Content-Security-Policy "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; media-src 'none'; object-src 'none'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests"
-        >Cache-Control "public, max-age=300, must-revalidate"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Cross-Origin-Opener-Policy "same-origin-allow-popups"
+        Cross-Origin-Resource-Policy "same-origin"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
 
-    reverse_proxy iamjk-site:4321
+    @iamjk_api path /api/*
+    header @iamjk_api {
+        Cache-Control "private, no-store"
+        CDN-Cache-Control "no-store"
+        Pragma "no-cache"
+    }
+
+    request_body @iamjk_api {
+        max_size 16KB
+    }
+
+    reverse_proxy iamjk-site:4321 {
+        header_up Host {host}
+    }
 }
 
-iamjk.site {
-    root * /srv/iamjk-site
-    import iamjk_static_site
-}
 ```
 
 The page source contains no literal `style="..."` or inline event handlers, but the runtime updates CSS custom properties through the DOM style API for pointer and scroll parallax. That is why the deployment policy allows `style-src-attr 'unsafe-inline'` while keeping `script-src-attr 'none'` and `script-src 'self'`. If you later remove the DOM style updates, you can tighten the style-attribute directive and retest in the deployed browsers.
 
 Caddy’s `encode zstd gzip` is appropriate for this application. The Node
 adapter serves prerendered page output and the `/api/contact` endpoint from
-the same origin, so no public API port or cross-origin policy is needed.
+the same origin, so no public API port or cross-origin policy is needed. Keep
+`/api/*` responses private and uncached at Caddy and the CDN; contact responses
+must never be stored or replayed.
+
+The `request_body` limiter is a Caddy 2.10+ directive. Keep the Caddy image
+current and let `caddy validate` reject an incompatible image before reload.
 
 Validate and reload the user service only after the config passes:
 
 ```bash
 podman run --rm --volume /home/jk/caddy/conf:/etc/caddy:ro,Z docker.io/library/caddy:alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl --user daemon-reload
-systemctl --user restart caddy.service
+podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl --user status caddy.service --no-pager
 ```
+
+Use `systemctl --user restart caddy.service` only when the Caddy container is
+not running or when a reload cannot be performed. Caddy recommends graceful
+reloads for configuration changes so active connections are not needlessly
+interrupted.
 
 For a content-only update, Caddy normally does not need a restart. Verify the public response and the compiled module:
 
@@ -343,6 +369,7 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 
 - Node.js release status: https://nodejs.org/en/about/previous-releases
 - Astro configuration reference: https://docs.astro.build/en/reference/configuration-reference/
+- Astro API endpoints: https://docs.astro.build/en/guides/endpoints/
 - Podman machine: https://docs.podman.io/en/latest/markdown/podman-machine.1.html
 - Podman run: https://docs.podman.io/en/latest/markdown/podman-run.1.html
 - Node official image and Alpine tradeoffs: https://github.com/nodejs/docker-node
@@ -355,7 +382,15 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Caddy `root`: https://caddyserver.com/docs/caddyfile/directives/root
 - Caddy `file_server`: https://caddyserver.com/docs/caddyfile/directives/file_server
 - Caddy `header`: https://caddyserver.com/docs/caddyfile/directives/header
+- Caddy request-body limits: https://caddyserver.com/docs/caddyfile/directives/request_body
 - Caddy `encode`: https://caddyserver.com/docs/caddyfile/directives/encode
+- Caddy `reverse_proxy`: https://caddyserver.com/docs/caddyfile/directives/reverse_proxy
+- Caddy graceful reloads: https://caddyserver.com/docs/running
+- Caddy command line reload: https://caddyserver.com/docs/command-line
+- Podman systemd/Quadlet units: https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
+- Resend send email API: https://resend.com/docs/api-reference/emails/send-email
+- Resend API errors: https://resend.com/docs/api-reference/errors
+- Resend idempotency keys: https://resend.com/docs/dashboard/emails/idempotency-keys
 - GitHub push protection: https://docs.github.com/en/code-security/concepts/secret-security/push-protection
 - 1Password SSH commit signing: https://www.1password.dev/ssh/git-commit-signing
 - GitHub CLI manual: https://cli.github.com/manual/

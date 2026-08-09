@@ -68,6 +68,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(endpoint, /requestId/);
   assert.doesNotMatch(endpoint, /website@iamjk\.site|hello@iamjk\.site/);
 
+  const astroConfig = await readFile(new URL("../astro.config.mjs", import.meta.url), "utf8");
+  assert.match(astroConfig, /checkOrigin:\s*true/);
+
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /--accent:\s*#c8844a/i);
@@ -85,10 +88,28 @@ test("builds the personal site as a complete static document", async () => {
 
   const caddy = await readFile(new URL("../deploy/Caddyfile.example", import.meta.url), "utf8");
   assert.match(caddy, /header_up Host \{host\}/i);
+  assert.match(caddy, /Strict-Transport-Security/i);
+  assert.match(caddy, /Cross-Origin-Resource-Policy/i);
+  assert.match(caddy, /path \/api\/\*/i);
+  assert.match(caddy, /CDN-Cache-Control "no-store"/i);
+  assert.match(caddy, /Cache-Control "private, no-store"/i);
+  assert.match(caddy, /request_body @iamjk_api/i);
+  assert.match(caddy, /max_size 16KB/i);
+  assert.doesNotMatch(caddy, /Cache-Control "public, max-age=/i);
+  assert.doesNotMatch(caddy, /root \* \/srv\/iamjk-site|file_server/i);
+
+  const quadlet = await readFile(new URL("../deploy/iamjk-site.container.example", import.meta.url), "utf8");
+  assert.match(quadlet, /DropCapability=all/);
 
   const deployment = await readFile(new URL("../scripts/deploy-vps.sh", import.meta.url), "utf8");
   assert.match(deployment, /public_post_status/);
   assert.match(deployment, /expected HTTP 400 validation response/);
+  assert.match(deployment, /journalctl --user -u caddy\.service/);
+  assert.match(deployment, /@iamjk_api path \/api\/\*/);
+  assert.match(deployment, /CDN-Cache-Control "no-store"/);
+  assert.match(deployment, /max_size 16KB/);
+  assert.match(deployment, /iamjk\[\.\]site/);
+  assert.match(deployment, /before-iamjk-site/);
 
   const favicon = await readFile(new URL("../public/favicon.svg", import.meta.url), "utf8");
   assert.match(favicon, /#050505/i);

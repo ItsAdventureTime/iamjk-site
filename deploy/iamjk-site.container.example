@@ -14,6 +14,7 @@ Secret=iamjk-site_resend-to,type=env,target=RESEND_TO
 Environment=HOST=0.0.0.0
 Environment=PORT=4321
 NoNewPrivileges=true
+DropCapability=all
 ReadOnly=true
 ReadOnlyTmpfs=true
 Tmpfs=/tmp

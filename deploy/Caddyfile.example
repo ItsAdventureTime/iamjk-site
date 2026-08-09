@@ -1,13 +1,26 @@
-iamjk.site, www.iamjk.site {
+iamjk.site {
     encode zstd gzip
 
     header {
+        Strict-Transport-Security "max-age=31536000"
         Content-Security-Policy "default-src 'none'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; media-src 'none'; object-src 'none'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests"
-        Cache-Control "public, max-age=300, must-revalidate"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
+        Cross-Origin-Opener-Policy "same-origin-allow-popups"
+        Cross-Origin-Resource-Policy "same-origin"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+
+    @iamjk_api path /api/*
+    header @iamjk_api {
+        Cache-Control "private, no-store"
+        CDN-Cache-Control "no-store"
+        Pragma "no-cache"
+    }
+
+    request_body @iamjk_api {
+        max_size 16KB
     }
 
     reverse_proxy iamjk-site:4321 {

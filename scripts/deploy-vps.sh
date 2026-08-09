@@ -67,9 +67,182 @@ rsync --archive --human-readable --itemize-changes \
 ssh "${ssh_options[@]}" -- "$ssh_target" \
   "for secret in iamjk-site_TURNSTILE_SECRET iamjk-site_resend-api-key iamjk-site_resend-from iamjk-site_resend-to; do podman secret inspect \"\$secret\" >/dev/null || { echo \"Missing Podman secret: \$secret\" >&2; exit 1; }; done"
 if [[ "$update_caddy" == "1" ]]; then
-  printf 'Updating the iamjk.site Caddy upstream...\n'
-  ssh "${ssh_options[@]}" -- "$ssh_target" \
-    "if grep -Fq 'header_up Host {host}' '$caddy_config_path'; then :; elif grep -Fq 'reverse_proxy iamjk-site:4321' '$caddy_config_path'; then cp '$caddy_config_path' '$caddy_config_path.before-iamjk-host-header.$backup_stamp' && sed -i '/^[[:space:]]*reverse_proxy iamjk-site:4321[[:space:]]*$/c\\    reverse_proxy iamjk-site:4321 {\\n        header_up Host {host}\\n    }' '$caddy_config_path'; elif grep -Fq 'reverse_proxy 127.0.0.1:4321' '$caddy_config_path'; then cp '$caddy_config_path' '$caddy_config_path.before-iamjk-network-fix.$backup_stamp' && sed -i 's/reverse_proxy 127\\.0\\.0\\.1:4321/reverse_proxy iamjk-site:4321/' '$caddy_config_path' && sed -i '/^[[:space:]]*reverse_proxy iamjk-site:4321[[:space:]]*$/c\\    reverse_proxy iamjk-site:4321 {\\n        header_up Host {host}\\n    }' '$caddy_config_path'; else echo 'Could not find the expected iamjk.site reverse_proxy directive; set UPDATE_CADDY=0 and update Caddy manually.' >&2; exit 1; fi"
+  printf 'Updating the iamjk.site Caddy upstream and API cache policy...\n'
+  ssh "${ssh_options[@]}" -- "$ssh_target" "bash -s -- '$caddy_config_path' '$backup_stamp'" <<'REMOTE_CADDY_PATCH'
+set -Eeuo pipefail
+
+caddy_config_path="$1"
+backup_stamp="$2"
+
+if [[ ! -f "$caddy_config_path" ]]; then
+  printf 'Caddyfile not found: %s\n' "$caddy_config_path" >&2
+  exit 1
+fi
+
+site_policy_state() {
+  awk '
+    BEGIN { in_site = 0; depth = 0 }
+    !in_site && $0 ~ /^[[:space:]]*iamjk[.]site[[:space:]]*\{/ {
+      in_site = 1
+      depth = 1
+      next
+    }
+    in_site {
+      if ($0 ~ /reverse_proxy (iamjk-site|127[.]0[.]0[.]1):4321/) proxy = 1
+      if ($0 ~ /@iamjk_api path \/api\/\*/) api = 1
+      if ($0 ~ /Cache-Control "private, no-store"/) cache = 1
+      if ($0 ~ /CDN-Cache-Control "no-store"/) cdn_cache = 1
+      if ($0 ~ /request_body @iamjk_api/) body = 1
+      if ($0 ~ /max_size 16KB/) body_size = 1
+      opens = gsub(/\{/, "{")
+      closes = gsub(/\}/, "}")
+      depth += opens - closes
+      if (depth <= 0) in_site = 0
+    }
+    END {
+      if (proxy && api && cache && cdn_cache && body && body_size) exit 0
+      if (proxy && (api || cache || cdn_cache || body || body_size)) exit 2
+      if (proxy) exit 1
+      exit 3
+    }
+  ' "$caddy_config_path"
+}
+
+host_header_present() {
+  awk '
+    BEGIN { in_site = 0; depth = 0 }
+    !in_site && $0 ~ /^[[:space:]]*iamjk[.]site[[:space:]]*\{/ {
+      in_site = 1
+      depth = 1
+      next
+    }
+    in_site {
+      if ($0 ~ /reverse_proxy iamjk-site:4321/) {
+        in_proxy = 1
+        lines = 0
+      }
+      if (in_proxy) {
+        lines++
+        if ($0 ~ /header_up Host \{host\}/) found = 1
+        if (lines > 6) in_proxy = 0
+      }
+      opens = gsub(/\{/, "{")
+      closes = gsub(/\}/, "}")
+      depth += opens - closes
+      if (depth <= 0) in_site = 0
+    }
+    END { exit found ? 0 : 1 }
+  ' "$caddy_config_path"
+}
+
+policy_state=0
+site_policy_state || policy_state=$?
+if [[ "$policy_state" == "2" ]]; then
+  printf 'The iamjk.site Caddy API policy is incomplete; repair it manually before deploying.\n' >&2
+  exit 1
+fi
+if [[ "$policy_state" == "3" ]]; then
+  printf 'Could not find the iamjk.site reverse_proxy block.\n' >&2
+  exit 1
+fi
+
+needs_backup=0
+if ! host_header_present || [[ "$policy_state" != "0" ]]; then
+  needs_backup=1
+fi
+if (( needs_backup )); then
+  cp -- "$caddy_config_path" "$caddy_config_path.before-iamjk-site.$backup_stamp"
+fi
+
+if ! host_header_present; then
+  temp_path="$caddy_config_path.tmp.$backup_stamp"
+  awk '
+    BEGIN { in_site = 0; depth = 0; done = 0 }
+    !in_site && $0 ~ /^[[:space:]]*iamjk[.]site[[:space:]]*\{/ {
+      in_site = 1
+      depth = 1
+      print
+      next
+    }
+    in_site && !done && $0 ~ /^[[:space:]]*reverse_proxy (127[.]0[.]0[.]1|iamjk-site):4321[[:space:]]*$/ {
+      if ($0 ~ /127[.]0[.]0[.]1/) {
+        print "    reverse_proxy iamjk-site:4321 {"
+      } else {
+        print "    reverse_proxy iamjk-site:4321 {"
+      }
+      print "        header_up Host {host}"
+      print "    }"
+      done = 1
+      next
+    }
+    in_site && !done && $0 ~ /^[[:space:]]*reverse_proxy (127[.]0[.]0[.]1|iamjk-site):4321[[:space:]]*\{/ {
+      sub(/127[.]0[.]0[.]1:4321/, "iamjk-site:4321")
+      print
+      print "        header_up Host {host}"
+      done = 1
+      depth++
+      next
+    }
+    { print }
+    {
+      if (in_site) {
+        opens = gsub(/\{/, "{")
+        closes = gsub(/\}/, "}")
+        depth += opens - closes
+        if (depth <= 0) in_site = 0
+      }
+    }
+    END { if (!done) exit 1 }
+  ' "$caddy_config_path" > "$temp_path"
+  mv -- "$temp_path" "$caddy_config_path"
+fi
+
+if ! host_header_present; then
+  printf 'iamjk.site reverse_proxy must preserve Host; deployment stopped safely.\n' >&2
+  exit 1
+fi
+
+if [[ "$policy_state" != "0" ]]; then
+  temp_path="$caddy_config_path.tmp.$backup_stamp"
+  awk '
+    BEGIN { in_site = 0; depth = 0; done = 0 }
+    !in_site && $0 ~ /^[[:space:]]*iamjk[.]site[[:space:]]*\{/ {
+      in_site = 1
+      depth = 1
+      print
+      next
+    }
+    in_site && !done && $0 ~ /^[[:space:]]*reverse_proxy iamjk-site:4321[[:space:]]*\{/ {
+      print "    @iamjk_api path /api/*"
+      print "    header @iamjk_api {"
+      print "        Cache-Control \"private, no-store\""
+      print "        CDN-Cache-Control \"no-store\""
+      print "        Pragma \"no-cache\""
+      print "    }"
+      print "    request_body @iamjk_api {"
+      print "        max_size 16KB"
+      print "    }"
+      done = 1
+    }
+    { print }
+    {
+      if (in_site) {
+        opens = gsub(/\{/, "{")
+        closes = gsub(/\}/, "}")
+        depth += opens - closes
+        if (depth <= 0) in_site = 0
+      }
+    }
+    END { if (!done) exit 1 }
+  ' "$caddy_config_path" > "$temp_path"
+  mv -- "$temp_path" "$caddy_config_path"
+fi
+
+if ! host_header_present || ! site_policy_state; then
+  printf 'The iamjk.site Caddy changes failed validation; inspect the backup before retrying.\n' >&2
+  exit 1
+fi
+REMOTE_CADDY_PATCH
 fi
 printf 'Synchronizing the sanitized native build context with rsync...\n'
 rsync --archive --delete --human-readable --itemize-changes --info=progress2 --partial --timeout=60 \
@@ -111,8 +284,13 @@ ssh "${ssh_options[@]}" -- "$ssh_target" \
   "podman exec '$app_container_name' node -e 'Promise.all([fetch(\"http://127.0.0.1:4321/\"), fetch(\"http://127.0.0.1:4321/api/contact\")]).then(async ([home, api]) => { const html = await home.text(); if (!home.ok || !html.includes(\"contact-form\") || !html.includes(\"keep the conversation going\") || api.status !== 405) process.exit(1); }).catch(() => process.exit(1))'"
 
 if [[ "$update_caddy" == "1" ]]; then
-  ssh "${ssh_options[@]}" -- "$ssh_target" \
-    "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && if systemctl --user is-active --quiet caddy.service; then podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; else systemctl --user restart caddy.service; fi"
+  if ! ssh "${ssh_options[@]}" -- "$ssh_target" \
+    "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && if systemctl --user is-active --quiet caddy.service; then podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; else systemctl --user restart caddy.service; fi"; then
+    printf 'Caddy reload/restart failed. Capturing rootless service diagnostics...\n' >&2
+    ssh "${ssh_options[@]}" -- "$ssh_target" \
+      "systemctl --user status caddy.service --no-pager || true; journalctl --user -u caddy.service -n 120 --no-pager || true; podman ps --all --format 'table {{.Names}}\\t{{.Status}}'" >&2
+    exit 1
+  fi
 fi
 
 public_api_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \
