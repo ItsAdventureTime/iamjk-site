@@ -295,15 +295,17 @@ The source context file remains outside this public repository.
 
 ## GitHub CLI and verified releases
 
-Use GitHub CLI to confirm the authenticated account and repository before a
-remote operation. GitHub CLI authentication supplies repository access; it does
-not sign commits. The existing 1Password SSH signer and Git configuration create
-the signature that GitHub can display as verified after the public signing key
-and author email are registered on the account.
+Use GitHub CLI for every GitHub remote operation. The repository remote must use
+HTTPS; GitHub CLI supplies the authenticated Git credential, so GitHub pushes do
+not depend on the SSH authentication agent. GitHub CLI authentication does not
+sign commits. The existing 1Password SSH signer is separate and is used only for
+optional commit signatures.
 
 ```bash
 gh auth status
+gh auth setup-git --hostname github.com
 gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
+git remote set-url origin https://github.com/ItsAdventureTime/iamjk-site.git
 git log -1 --show-signature
 git push origin main
 ```

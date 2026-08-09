@@ -110,19 +110,24 @@ does not replace, this project’s email/privacy scan.
 Review any push-protection alert instead of bypassing it automatically. A real
 credential must be rotated or revoked before the commit is republished.
 
-GitHub CLI is available for authenticated repository operations. Confirm the
-account before publishing, then use the normal signed Git commit flow:
+GitHub CLI is the required authentication path for GitHub remote operations.
+Keep `origin` on HTTPS; do not use the SSH remote for pushes. Confirm the active
+account, configure Git to use GitHub CLI credentials, verify the remote, then
+push the local commit:
 
 ```bash
 gh auth status
+gh auth setup-git --hostname github.com
 gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
+git remote set-url origin https://github.com/ItsAdventureTime/iamjk-site.git
 git push origin main
 ```
 
 `gh auth setup-git` configures GitHub CLI credentials for Git transport; it does
-not create a cryptographic signature. Verification comes from the signed commit,
-the registered SSH signing public key, and the matching GitHub author email. Keep
-`commit.gpgsign=true` and the 1Password SSH signer configured.
+not create a cryptographic signature. Commit signing is separate from remote
+transport; if signing is enabled, verification comes from the signed commit, the
+registered signing public key, and the matching GitHub author email. A failed
+signing agent must not be worked around by publishing private key material.
 
 ## 1Password-signed Git
 
