@@ -78,8 +78,8 @@ container build arguments, logs, and shell history:
 ```bash
 printf '%s' "$TURNSTILE_SECRET_VALUE" | podman secret create iamjk-site_TURNSTILE_SECRET -
 printf '%s' "$RESEND_API_KEY_VALUE" | podman secret create iamjk-site_resend-api-key -
-printf '%s' 'website@iamjk.site' | podman secret create iamjk-site_resend-from -
-printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
+printf '%s' "$RESEND_FROM_VALUE" | podman secret create iamjk-site_resend-from -
+printf '%s' "$RESEND_TO_VALUE" | podman secret create iamjk-site_resend-to -
 ```
 
 The Quadlet template maps these secrets to runtime-only environment variables,

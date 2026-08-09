@@ -111,6 +111,10 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(deployment, /iamjk\[\.\]site/);
   assert.match(deployment, /before-iamjk-site/);
 
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const security = await readFile(new URL("../SECURITY.md", import.meta.url), "utf8");
+  assert.doesNotMatch(`${readme}\n${security}`, /website@iamjk\.site|hello@iamjk\.site/);
+
   const favicon = await readFile(new URL("../public/favicon.svg", import.meta.url), "utf8");
   assert.match(favicon, /#050505/i);
   assert.match(favicon, /#F4F2EF/i);
