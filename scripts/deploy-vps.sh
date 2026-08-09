@@ -112,7 +112,7 @@ ssh "${ssh_options[@]}" -- "$ssh_target" \
 
 if [[ "$update_caddy" == "1" ]]; then
   ssh "${ssh_options[@]}" -- "$ssh_target" \
-    "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && systemctl --user restart caddy.service"
+    "podman exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl --user daemon-reload && if systemctl --user is-active --quiet caddy.service; then podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; else systemctl --user restart caddy.service; fi"
 fi
 
 public_api_status="$(ssh "${ssh_options[@]}" -- "$ssh_target" \

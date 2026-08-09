@@ -162,7 +162,8 @@ shell history.
 
 The canonical release path runs tests on macOS through Podman, transfers a
 sanitized source build context to the VPS, builds the standalone Node 24 Alpine
-image natively on the VPS, restarts the Quadlet service, and then invokes the
+image natively on the VPS, restarts the application Quadlet, gracefully reloads
+the running Caddy configuration, and then invokes the
 VPS-side bunny-purge script over SSH. The rsync exclusions keep `.env` files,
 private-key/certificate files, generated output, and local agent metadata out
 of the VPS build context. Before purging the CDN, it checks the new contact

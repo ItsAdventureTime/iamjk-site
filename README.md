@@ -93,7 +93,8 @@ printf '%s' 'hello@iamjk.site' | podman secret create iamjk-site_resend-to -
 The single deployment helper installs or updates the application Quadlet in
 `~/.config/containers/systemd/iamjk-site/`, joins it to `caddy.network`,
 updates only the `iamjk.site` upstream in the existing Caddyfile, and restarts
-the rootless application and Caddy services. It does not replace the shared
+  the rootless application and gracefully reloads the running Caddy service. It
+  does not replace the shared
 Caddyfile or change any other site. Caddy should proxy `iamjk.site` to
 `iamjk-site:4321` on the shared network and preserve the public host with
 `header_up Host {host}`. Astro uses that host while validating same-origin POST
