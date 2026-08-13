@@ -27,6 +27,7 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
 - `deploy/Caddyfile.example` — reverse-proxy configuration for the Node application and Turnstile CSP.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
+- `DESIGN.md` — visual, content, responsive, motion, and accessibility guide.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
 - `scripts/deploy-vps.sh` — local validation, sanitized rsync upload, native VPS Podman build, and Bunny purge release helper.
 - `public/` — the static favicon and intentionally used public assets.
@@ -69,6 +70,23 @@ The `test` script runs `astro build` before Node’s test runner checks
 the same-origin module, accessibility markers, sensitive-content exclusions,
 email-address exclusions, and the no-blur design constraints.
 
+## Standards baseline
+
+The current UI follows WCAG 2.2 as the accessibility reference, WAI-ARIA/APG
+guidance for landmarks and current-location state, and responsive guidance that
+preserves zoom, reflow, source-order reading, visible focus, and touch-safe
+targets. The page’s `prefers-reduced-motion` path stops continuous Canvas 2D
+animation and pointer parallax while keeping section state available through
+static scroll updates.
+
+The repository stays on its pinned Astro 7 stack. Astro View Transitions are
+not enabled because this is one prerendered document and does not need a
+client-side routing layer. Revisit that decision only with route-announcement,
+focus, and reduced-motion tests in place.
+
+The standards references used for the current review are maintained in
+[`DESIGN.md`](DESIGN.md).
+
 ## Contact form secrets and Turnstile
 
 The browser receives only the public Turnstile site key. The browser submits
@@ -110,7 +128,7 @@ pnpm run build
 pnpm run preview
 ```
 
-Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties. The canvas caps mobile pixel density and suspends its frame scheduler while the document is hidden to reduce Safari/WebKit and Chromium/Blink battery and main-thread work. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Direct local rendering has been checked in the available browser runtime; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
+Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties. The canvas caps mobile pixel density and suspends its frame scheduler while the document is hidden to reduce Safari/WebKit and Chromium/Blink battery and main-thread work. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Run a browser smoke check when an available browser runtime is connected; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
 
 ## Preferred macOS release workflow
 

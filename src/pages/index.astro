@@ -222,7 +222,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section class="strengths section-frame" data-world-section="ideas" data-world-index="05" data-world-readout="FIVE SIGNALS" data-world-detail="CLIFTONSTRENGTHS / TOP FIVE" aria-labelledby="strengths-title">
+      <section id="strengths" class="strengths section-frame" data-world-section="ideas" data-world-index="05" data-world-readout="FIVE SIGNALS" data-world-detail="CLIFTONSTRENGTHS / TOP FIVE" aria-labelledby="strengths-title">
         <div class="section-intro">
           <p class="section-index">05 / Five signals</p>
           <p class="section-note">CliftonStrengths · top five</p>
@@ -246,7 +246,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section class="details section-frame" data-world-section="detail" data-world-index="06" data-world-readout="SMALL DETAILS" data-world-detail="THE TEXTURE AROUND THE EDGES" aria-labelledby="details-title">
+      <section id="details" class="details section-frame" data-world-section="detail" data-world-index="06" data-world-readout="SMALL DETAILS" data-world-detail="THE TEXTURE AROUND THE EDGES" aria-labelledby="details-title">
         <div class="section-intro">
           <p class="section-index">06 / Small details</p>
           <p class="section-note">The texture around the edges</p>
@@ -395,7 +395,17 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
 
       const context = canvas?.getContext("2d");
       const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-world-section]"));
+      const navLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(".site-nav a[href^='#']"));
       let activeSectionIndex = 0;
+      const updateNavState = () => {
+        const activeId = sections[activeSectionIndex]?.id;
+        navLinks.forEach((link) => {
+          const current = Boolean(activeId && link.getAttribute("href") === `#${activeId}`);
+          link.classList.toggle("is-current", current);
+          if (current) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      };
       if (canvas && context) {
         document.querySelector<HTMLElement>(".signal-wrap")?.classList.add("is-enhanced");
         let width = 0;
@@ -460,6 +470,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
 
           const nearestIndex = focusIndex >= 0 ? focusIndex : visibleIndex;
           activeSectionIndex = nearestIndex;
+          updateNavState();
           sections.forEach((section, index) => {
             const current = index === nearestIndex;
             section.classList.toggle("is-current", current);
@@ -525,7 +536,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         };
 
         const scheduleFrame = () => {
-          if (!pageVisible || animationFrameId !== 0) return;
+          if (!pageVisible || animationFrameId !== 0 || motionQuery.matches) return;
           animationFrameId = window.requestAnimationFrame(drawScene);
         };
 
@@ -649,8 +660,15 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         document.addEventListener("scroll", () => {
           targetScroll = window.scrollY;
           sectionStateDirty = true;
+          if (motionQuery.matches) {
+            lastFrame = performance.now();
+            drawScene(lastFrame);
+          } else {
+            scheduleFrame();
+          }
         }, { passive: true });
         window.addEventListener("pointermove", (event) => {
+          if (motionQuery.matches) return;
           pointerX = (event.clientX / width) - 0.5;
           pointerY = (event.clientY / height) - 0.5;
           document.documentElement.style.setProperty("--pointer-x", pointerX.toFixed(3));
@@ -664,12 +682,21 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           pageVisible = !document.hidden;
           if (pageVisible) {
             lastFrame = performance.now();
-            scheduleFrame();
+            if (motionQuery.matches) drawScene(lastFrame);
+            else scheduleFrame();
           }
         }, { passive: true });
+        motionQuery.addEventListener("change", () => {
+          sectionStateDirty = true;
+          lastFrame = performance.now();
+          if (motionQuery.matches) drawScene(lastFrame);
+          else scheduleFrame();
+        });
         resize();
         targetScroll = window.scrollY;
-        scheduleFrame();
+        lastFrame = performance.now();
+        if (motionQuery.matches) drawScene(lastFrame);
+        else scheduleFrame();
       }
     </script>
   </body>

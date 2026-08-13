@@ -50,7 +50,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(source, /sectionStateDirty = true/);
   assert.match(source, /const maxPixelRatio = width < 700 \? 1\.5 : 2/);
   assert.match(source, /let pageVisible = !document\.hidden/);
-  assert.match(source, /if \(!pageVisible \|\| animationFrameId !== 0\) return/);
+  assert.match(source, /if \(!pageVisible \|\| animationFrameId !== 0 \|\| motionQuery\.matches\) return/);
+  assert.match(source, /if \(motionQuery\.matches\) return/);
+  assert.match(source, /motionQuery\.addEventListener\("change"/);
   assert.match(source, /document\.addEventListener\("visibilitychange"/);
   assert.match(source, /data-world-readout="ABOUT"/);
   assert.match(source, /data-world-detail="A LITTLE CONTEXT"/);
@@ -82,10 +84,11 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(css, /trace-flow/i);
   assert.match(css, /\.contact-form/);
   assert.match(css, /\.cf-turnstile/);
+  assert.match(css, /min-height:\s*44px/);
   assert.match(css, /\.process-list li:last-child\s*\{\s*border-bottom:\s*0/i);
   assert.doesNotMatch(css, /\.card-number\s*\{[^}]*margin-bottom:\s*auto/i);
   assert.match(css, /\.card-arrow\s*\{[^}]*margin-top:\s*auto/i);
-  assert.doesNotMatch(css, /backdrop-filter|shadowBlur|filter:\s*blur/i);
+  assert.doesNotMatch(css, /box-shadow|backdrop-filter|shadowBlur|filter:\s*blur/i);
   assert.doesNotMatch(css, /@keyframes scene-device-float[^}]*translate:\s/i);
   assert.match(css, /\.world-readout\s*\{\s*display:\s*none/i);
   assert.doesNotMatch(css, /violet|purple|8052ff|7543ff|9b68ff/i);

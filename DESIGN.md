@@ -1,7 +1,7 @@
 # iamjk.site design guide
 
 **Status:** implementation reference for the current site
-**Reviewed:** 2026-08-08
+**Reviewed:** 2026-08-14
 **Audience:** future content, visual, and implementation changes
 
 iamjk.site is a personal field guide for Juan Karlo “JK” de Guzman. It is deliberately personal rather than a work portfolio: visitors should meet a person through his faith, language, systems curiosity, technology shifts, books, ideas, and practical way of learning.
@@ -41,19 +41,19 @@ The source of truth is `app/globals.css`. Keep these values aligned with the imp
 
 | Token | Value | Use |
 |---|---|---|
-| `--ink` | `#080909` | page and canvas base |
-| `--ink-soft` | `#101111` | dark raised surfaces |
-| `--ink-raised` | `#171817` | readable surface layers |
-| `--paper` | `#f1eee8` | primary text |
-| `--paper-soft` | `#d2cec5` | body copy |
-| `--muted` | `#9a9991` | secondary text |
+| `--ink` | `#0c1010` | page and canvas base |
+| `--ink-soft` | `#131918` | dark raised surfaces |
+| `--ink-raised` | `#1c2522` | readable surface layers |
+| `--paper` | `#f4f1eb` | primary text |
+| `--paper-soft` | `#cdd4cf` | body copy |
+| `--muted` | `#98a29c` | secondary text |
 | `--line` | `rgba(241, 238, 232, 0.16)` | quiet borders and separators |
 | `--line-strong` | `rgba(241, 238, 232, 0.34)` | readable borders and focus |
 | `--accent` | `#c8844a` | warm amber/rust emphasis |
 | `--accent-bright` | `#efb36b` | active emphasis and key words |
-| `--cool` | `#9ec5c3` | cool signal details |
-| `--rust` | `#b9684d` | secondary signal details |
-| `--sage` | `#88967e` | tertiary signal details |
+| `--cool` | `#9eb9b2` | cool signal details |
+| `--rust` | `#b5795f` | secondary signal details |
+| `--sage` | `#8d9d86` | tertiary signal details |
 
 Typography uses the broadly available Arial/Helvetica system stack for display and body text, with a monospace stack for labels and metadata. Do not add a remote font dependency without a clear performance and visual reason.
 
@@ -134,6 +134,35 @@ Keep animations short, interruptible, and subordinate to reading. Use transforms
 - The source is designed for Blink, WebKit, and Gecko from a standards baseline. Direct local rendering should be verified in an available browser; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
 - Use WCAG 2.2 as the accessibility reference, especially contrast, reflow, focus visibility, and animation from interaction.
 - Keep Astro’s static output and canonical site configuration aligned with the official configuration reference.
+
+## Current standards review
+
+The 2026-08-14 review keeps the pinned Astro 7 stack and applies the current
+standards baseline without adding a UI framework or client-side routing:
+
+- **WCAG 2.2:** preserve readable contrast, reflow at narrow widths and zoom,
+  visible keyboard focus, meaningful headings and labels, and non-motion access
+  to every section.
+- **WAI-ARIA/APG:** use native landmarks and links first; use
+  `aria-current="location"` only for the active same-page section link.
+- **Reduced motion:** `prefers-reduced-motion: reduce` disables the continuous
+  canvas scheduler and pointer parallax. Section/readout changes remain
+  available as static updates when the visitor scrolls.
+- **Responsive interaction:** keep the viewport zoomable, use flexible grids,
+  preserve source-order reading flow, and give primary touch targets at least
+  44px of usable height where the layout permits.
+- **Astro baseline:** keep static output and the existing Node adapter; do not
+  adopt View Transitions or another animation layer unless the page gains
+  multi-route navigation and the accessibility behavior is tested.
+
+Reference pages reviewed:
+
+- https://www.w3.org/TR/WCAG22/
+- https://www.w3.org/WAI/ARIA/apg/
+- https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion
+- https://web.dev/articles/accessible-responsive-design
+- https://docs.astro.build/en/guides/view-transitions/
+- https://astro.build/blog/astro-7/
 
 ## Change checklist
 

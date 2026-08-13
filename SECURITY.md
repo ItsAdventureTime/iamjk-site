@@ -1,6 +1,6 @@
 # Security and privacy guide
 
-**Reviewed:** 2026-08-09
+**Reviewed:** 2026-08-14
 **Scope:** public iamjk.site source, contact endpoint, container runtime, and Git release workflow
 
 The 2026-08-08 personal-context review informs the public copy. Only the
@@ -25,6 +25,7 @@ belong in GitHub. The following remain local-only and are ignored:
 
 - `.openai/` — hosting-provider metadata not needed by the VPS deployment.
 - `.serena/` — local agent configuration and memories.
+- `.agents/` and `skills-lock.json` — local skill installation metadata.
 - `.env*`, private keys, certificates, credentials, generated output, and
   dependency directories.
 
@@ -39,20 +40,17 @@ Run the build and scan both source files and generated output:
 ```bash
 pnpm run check
 pnpm test
-rg -n -i --hidden \
-  --glob '!.git/**' \
-  --glob '!node_modules/**' \
-  --glob '!.pnpm-store/**' \
-  --glob '!.astro/**' \
-  --glob '!dist/**' \
-  --glob '!.DS_Store' \
-  'mailto:|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}' .
+rg -n -i \
+  'mailto:|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}' \
+  src app public astro.config.mjs package.json
 rg -n -i \
   'mailto:|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}' \
   dist
 ```
 
-The repository scan should produce no email-address matches in public source.
+The implementation-source scan intentionally excludes Markdown guides and tests,
+which document the scan pattern itself. It should produce no email-address or
+mailto: matches in the public implementation source.
 The rendered-output test separately rejects email-shaped strings and `mailto:`
 links in `dist/client/index.html`. Runtime-only sender and recipient values are
 injected through Podman secrets and never copied into the image or browser
