@@ -26,6 +26,7 @@ belong in GitHub. The following remain local-only and are ignored:
 - `.openai/` — hosting-provider metadata not needed by the VPS deployment.
 - `.serena/` — local agent configuration and memories.
 - `.agents/` and `skills-lock.json` — local skill installation metadata.
+- `.deploy-vps.conf` — local VPS routing details used by the deployment helper.
 - `.env*`, private keys, certificates, credentials, generated output, and
   dependency directories.
 
@@ -95,7 +96,8 @@ The Caddy site block must also mark `/api/*` as `private, no-store` and set
 `CDN-Cache-Control: no-store` so contact responses cannot be cached at the edge.
 It must cap the `/api/*` request body at `16KB` before proxying, matching the
 application limit and preventing oversized uploads from reaching Astro.
-The deployment helper adds this matcher idempotently when `UPDATE_CADDY=1` and
+The deployment helper adds this matcher idempotently when
+`DEPLOY_UPDATE_CADDY="1"` (the default) and
 backs up the shared Caddyfile before changing it. Review the backup and validate
 the full shared Caddyfile before reloading Caddy.
 Because the Caddy Quadlet mounts `/etc/caddy` read-only, formatting uses a
@@ -185,19 +187,24 @@ shell history.
 The canonical release path runs tests on macOS through Podman, transfers a
 sanitized source build context to the VPS, builds the standalone Node 24 Alpine
 image natively on the VPS, restarts the application Quadlet, gracefully reloads
-the running Caddy configuration only after formatting and validation, and then invokes the
-VPS-side bunny-purge script over SSH. The rsync exclusions keep `.env` files,
-private-key/certificate files, generated output, and local agent metadata out
-of the VPS build context. Before purging the CDN, it checks the new contact
-markup internally and confirms the public `GET /api/contact` route returns
-`405 Method Not Allowed`, proving Caddy reaches the Node endpoint. Run it from
-the repository root:
+the running Caddy configuration only after formatting and validation, and then
+invokes the VPS-side bunny-purge script over SSH. The rsync exclusions keep
+`.env` files, `.deploy-vps.conf`, private-key/certificate files, generated
+output, and local agent metadata out of the VPS build context. Before purging
+the CDN, it checks the new contact markup internally and confirms the public
+`GET /api/contact` route returns `405 Method Not Allowed`, proving Caddy
+reaches the Node endpoint.
+
+Run the one-time local setup from the repository root:
 
 ~~~bash
 cd ~/dev/iamjk-site
-VPS_HOST=YOUR_VPS_HOST \
-VPS_USER=jk \
-VPS_PATH=/home/jk/iamjk-site \
+./scripts/deploy-vps.sh --init
+~~~
+
+Then deploy later updates with:
+
+~~~bash
 ./scripts/deploy-vps.sh
 ~~~
 

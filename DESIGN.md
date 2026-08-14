@@ -113,6 +113,11 @@ Motion is part of the page’s structure, not decoration:
 
 Keep animations short, interruptible, and subordinate to reading. Use transforms and opacity rather than layout-affecting animation. Avoid animating height, top, left, or large paint-heavy effects.
 
+- Keep direct navigation feedback close to 160ms so a click or tap feels immediate.
+- Keep reveal transitions short enough that content never feels blocked while a
+  visitor scrolls; reduced motion must collapse all transition and animation
+  delays.
+
 ## Responsive rules
 
 - Test at narrow mobile widths, including 320px, 375px, and 390px, plus desktop widths around 1280px and 1440px.
@@ -121,6 +126,13 @@ Keep animations short, interruptible, and subordinate to reading. Use transforms
 - Allow long headings and body copy to wrap naturally.
 - Stack the four interest cards and the two detail columns on small screens.
 - Keep the canvas decorative and behind content; it must never create horizontal scrolling.
+- Keep primary navigation links and the “Say hello” CTA in a visible control
+  group with centered labels and a shared 48px minimum height. On narrow
+  screens, let the navigation rail scroll horizontally instead of shrinking or
+  hiding the controls needed to understand the page.
+- Below 560px, keep every primary section reachable through the touch-safe,
+  horizontally scrollable navigation rail; only the rail may scroll, never the
+  page viewport.
 - Use a touch-safe interaction model. Pointer-only effects must be optional and must not be required to discover content.
 
 ## Accessibility and browser baseline
@@ -129,6 +141,8 @@ Keep animations short, interruptible, and subordinate to reading. Use transforms
 - Decorative canvas and scene motifs remain `aria-hidden="true"`.
 - Do not use color alone to communicate meaning.
 - Keep contrast strong enough for body copy and metadata on the charcoal surfaces.
+- The contact form must retain native validation, announce pending/success/error
+  feedback through its live status, and expose its busy state to assistive tech.
 - Use standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties.
 - Avoid relying on experimental `animation-timeline` features or browser-specific prefixes.
 - The source is designed for Blink, WebKit, and Gecko from a standards baseline. Direct local rendering should be verified in an available browser; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
@@ -150,7 +164,8 @@ standards baseline without adding a UI framework or client-side routing:
   available as static updates when the visitor scrolls.
 - **Responsive interaction:** keep the viewport zoomable, use flexible grids,
   preserve source-order reading flow, and give primary touch targets at least
-  44px of usable height where the layout permits.
+  44px of usable height where the layout permits. The primary navigation and
+  “Say hello” CTA use a 48px minimum height in the current implementation.
 - **Astro baseline:** keep static output and the existing Node adapter; do not
   adopt View Transitions or another animation layer unless the page gains
   multi-route navigation and the accessibility behavior is tested.
@@ -172,7 +187,7 @@ Before accepting a visual change:
 2. Run `pnpm test`, which builds first and checks the rendered document.
 3. Confirm `dist/index.html` and `dist/_astro/*.js` are produced.
 4. Run the source and generated-output privacy scans in `SECURITY.md`.
-5. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text.
+5. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text; verify that every primary navigation control and the “Say hello” CTA share a 48px height and remain discoverable in the mobile rail.
 6. Check keyboard focus, reduced motion, and no-script behavior.
 7. Confirm no blur, backdrop blur, shadow, purple/violet palette drift, city-level location, age/year of birth, or email address has returned.
 8. Review the diff and keep the generated `dist/` output out of Git.

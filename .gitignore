@@ -28,6 +28,9 @@
 /.agents/
 /skills-lock.json
 
+# local deployment target (never commit VPS routing details)
+/.deploy-vps.conf
+
 # debug
 npm-debug.log*
 yarn-debug.log*

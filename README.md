@@ -25,12 +25,14 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `Containerfile` — reproducible Node 24 production image.
 - `pnpm-workspace.yaml` — explicit allowlist for the reviewed `esbuild` and `sharp` install scripts required by the build.
 - `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
+- `deploy/iamjk-site.local.conf.example` — local deployment-target template; copy it only when you prefer manual setup.
 - `deploy/Caddyfile.example` — reverse-proxy configuration for the Node application and Turnstile CSP.
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `DESIGN.md` — visual, content, responsive, motion, and accessibility guide.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
 - `scripts/deploy-vps.sh` — local validation, sanitized rsync upload, native VPS Podman build, and Bunny purge release helper.
 - `public/` — the static favicon and intentionally used public assets.
+- `.deploy-vps.conf` — ignored local deployment target created by `scripts/deploy-vps.sh --init`.
 - `dist/` — generated release output; ignored by Git.
 
 ## Local development
@@ -69,6 +71,13 @@ The `test` script runs `astro build` before Node’s test runner checks
 `dist/client/index.html`. It verifies metadata, important copy, section motifs,
 the same-origin module, accessibility markers, sensitive-content exclusions,
 email-address exclusions, and the no-blur design constraints.
+
+For UI or interaction changes, run a browser smoke check at a desktop width and
+at least one narrow mobile width. Confirm that the primary navigation is
+visibly grouped, every navigation link and the “Say hello” CTA share a 48px
+height, and the mobile rail scrolls without creating page-level horizontal
+overflow. Also check keyboard focus, the active section state, contact-form
+pending/success/error feedback, and `prefers-reduced-motion` behavior.
 
 ## Standards baseline
 
@@ -140,6 +149,134 @@ The preferred release path runs on macOS:
 4. Podman builds the application image natively on the VPS and restarts the Quadlet service.
 5. SSH invokes the VPS-side bunny-purge script only after the service restarts.
 
+## Update an existing VPS deployment
+
+The site is already installed as a rootless Podman Quadlet on the VPS. For a
+normal content, style, or application update, configure the target once and
+then run one command:
+
+```bash
+cd ~/dev/iamjk-site
+./scripts/deploy-vps.sh --init
+./scripts/deploy-vps.sh
+```
+
+`--init` asks for the VPS hostname, SSH user, and remote application path. It
+creates the ignored, mode-600 `.deploy-vps.conf` in the repository root. The
+file contains routing details only; Podman secrets stay on the VPS. Edit that
+file directly later if the target changes. After the one-time setup, the
+normal update command is simply:
+
+```bash
+./scripts/deploy-vps.sh
+```
+
+The helper deploys the current checkout, so the normal local loop is:
+
+```bash
+# make and review the change
+./scripts/deploy-vps.sh
+```
+
+If you update the checkout from Git first, use `git pull --ff-only` before the
+deployment command. The helper computes its repository root from the script
+location, so it can also be called from another working directory.
+
+The helper is the release gate. It will:
+
+1. start the local Podman machine if needed;
+2. install the pinned pnpm version in a disposable Node 24 Alpine container;
+3. run the frozen-lockfile check and rendered-output test;
+4. verify the four existing Podman secrets on the VPS;
+5. synchronize a sanitized build context, excluding Git, agent metadata,
+   `skills-lock.json`, `.deploy-vps.conf`, dependencies, generated output,
+   environment files, and common key/certificate extensions;
+6. build the image natively on the VPS and restart `iamjk-site.service`;
+7. check the running page and contact endpoint;
+8. format, validate, and gracefully reload Caddy; then
+9. verify the public endpoint before invoking the VPS-side `bunny-purge`.
+
+Do not run `podman build`, `systemctl restart`, or `bunny-purge` manually for a
+normal update. The helper deliberately builds on the VPS so the image matches
+the VPS architecture, and it stops before the CDN purge if the app, Caddy, or
+public API checks fail.
+
+If the VPS uses non-default paths or a non-generated container name, add the
+optional settings to `.deploy-vps.conf`:
+
+```bash
+DEPLOY_UPDATE_CADDY="1"
+DEPLOY_QUADLET_DIR="/home/jk/.config/containers/systemd/iamjk-site"
+DEPLOY_CADDY_CONFIG_PATH="/home/jk/caddy/conf/Caddyfile"
+DEPLOY_APP_CONTAINER_NAME="iamjk-site"
+```
+
+Use `DEPLOY_UPDATE_CADDY="0"` only when Caddy is managed separately and its existing
+`iamjk.site` block already points to `iamjk-site:4321`, preserves the public
+`Host`, keeps `/api/*` responses private and uncached, and limits request bodies.
+The helper still validates and reloads Caddy after the application update.
+
+For automation or a one-off target, the legacy environment-variable overrides
+remain supported and take precedence over the local config:
+
+```bash
+VPS_HOST=YOUR_VPS_HOST ./scripts/deploy-vps.sh
+```
+
+Use `./scripts/deploy-vps.sh --help` to see the available local options.
+
+The helper requires local `podman`, `rsync`, and `ssh`, plus SSH access to the
+VPS. The VPS requires rootless Podman, the existing `iamjk-site.service`, the
+`caddy.network`, all four application secrets, and the VPS-side `bunny-purge`
+command. No secret values belong in the command line, repository, image, or
+build context.
+
+The VPS transport is separate from GitHub transport: this helper uses SSH and
+rsync to reach the server and deploy the local checkout. `gh` HTTPS
+authentication can manage the GitHub repository, but it cannot replace the
+VPS's SSH access. If SSH access is prohibited, do not run this helper; use a
+separate VPS-supported deployment transport instead.
+
+For a failed deployment, first inspect the helper's diagnostics and the
+rootless service logs:
+
+```bash
+ssh jk@YOUR_VPS_HOST 'systemctl --user status iamjk-site.service --no-pager; journalctl --user -u iamjk-site.service -n 80 --no-pager'
+```
+
+The helper preserves timestamped Caddyfile backups when it changes or formats
+that file. It does not implement an automatic application-image rollback; stop
+and inspect before retrying, and use the last known-good release image only
+after confirming its tag and configuration on the VPS.
+
+### Current deployment baseline
+
+Reviewed 2026-08-14 against the current official guidance:
+
+- Node 24 remains the production line because it is an LTS release; do not
+  switch the image to a Current or EOL line without a compatibility review.
+- Astro 7 remains the application framework. Its Node adapter serves the
+  prerendered document and same-origin contact endpoint from the standalone
+  image; the existing `Containerfile` and `astro.config.mjs` already match
+  that model.
+- Rootless Quadlet remains the service model. The unit belongs under the
+  user's `~/.config/containers/systemd/` path, and `systemctl --user
+  daemon-reload` regenerates the service after the unit is copied.
+- Caddy configuration changes use `caddy validate` followed by `caddy reload`
+  rather than stopping and starting the proxy. The helper performs both checks
+  before the public endpoint checks and CDN purge.
+- The frozen lockfile remains the dependency-control boundary. Do not replace
+  `pnpm install --frozen-lockfile` with an unconstrained install during a
+  release.
+
+Official references:
+
+- [Node.js release schedule](https://nodejs.org/en/about/previous-releases)
+- [Astro deployment guide](https://docs.astro.build/en/guides/deploy/)
+- [Podman Quadlet units](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html)
+- [Caddy graceful reloads](https://caddyserver.com/docs/command-line)
+- [GitHub deployment environments](https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments) (for a future CI workflow, not this manual helper)
+
 Podman on macOS requires a virtual machine. Install it with Homebrew and
 initialize a machine once:
 
@@ -159,11 +296,14 @@ Run the repeatable deployment helper from the repository root:
 
 ~~~bash
 cd ~/dev/iamjk-site
-VPS_HOST=YOUR_VPS_HOST \
-VPS_USER=jk \
-VPS_PATH=/home/jk/iamjk-site \
+./scripts/deploy-vps.sh --init  # first time only
 ./scripts/deploy-vps.sh
 ~~~
+
+The first command creates the ignored `.deploy-vps.conf` target file. After
+that one-time setup, `./scripts/deploy-vps.sh` is the normal update command;
+there is no need to export VPS variables in each terminal session. The helper
+also works when called outside the repository root.
 
 The helper uses the pinned Node 24 Alpine image by default, installs the
 repository-pinned pnpm version inside the disposable container, and runs the
@@ -173,17 +313,16 @@ avoids Apple Silicon-to-x86 image incompatibilities. The local test container mo
 Linux-only node_modules tmpfs, so macOS host modules cannot trigger pnpm's
 non-interactive cleanup prompt. Alpine supplies sh, so the helper does not
 assume Bash. Override the image or pnpm version only when the project runtime
-policy changes:
+policy changes. Put any deliberate override in `.deploy-vps.conf` instead of
+adding it to every command:
 
 The repository explicitly allows only the `esbuild` and `sharp` dependency
 build scripts. pnpm blocks unreviewed dependency scripts by default; keep this
 allowlist narrow and review it when dependencies change.
 
 ~~~bash
-CONTAINER_IMAGE=docker.io/library/node:24-alpine \
-PNPM_VERSION=11.15.1 \
-VPS_HOST=YOUR_VPS_HOST \
-./scripts/deploy-vps.sh
+DEPLOY_CONTAINER_IMAGE="docker.io/library/node:24-alpine"
+DEPLOY_PNPM_VERSION="11.15.1"
 ~~~
 
 The helper checks the running container for `contact-form`, formats and
@@ -194,11 +333,6 @@ SSH access to the VPS and a VPS-side `bunny-purge` script. It does not look for
 bunny-purge on macOS and does not copy CDN credentials to the local machine. It
 also checks the app’s `GET /api/contact` response and the public Caddy route;
 both must return the expected application behavior before the CDN is purged.
-After rsync succeeds, it runs:
-
-~~~bash
-ssh YOUR_VPS_USER@YOUR_VPS_HOST bunny-purge
-~~~
 
 The helper is idempotent for both first application installation and later
 updates. It expects the existing rootless Caddy Quadlet, `caddy.network`, the
@@ -206,21 +340,19 @@ four Podman secrets, and the VPS-side `bunny-purge` command to already exist.
 The synced build context excludes Git metadata, agent metadata, generated files,
 dependency directories, `.env` files, and common private-key/certificate
 extensions. Podman secrets remain only on the VPS.
-Set `UPDATE_CADDY=0` only when you intentionally manage the Caddy upstream
+Set `DEPLOY_UPDATE_CADDY="0"` only when you intentionally manage the Caddy upstream
 yourself; formatting, validation, and the safe reload still run. The helper
 recognizes both the explicit `iamjk-site` name and
-Quadlet’s generated default `systemd-iamjk-site`; set `APP_CONTAINER_NAME` if
-your existing service uses another name. Set `QUADLET_DIR` or
-`CADDY_CONFIG_PATH` when your VPS uses different paths:
+Quadlet’s generated default `systemd-iamjk-site`; set
+`DEPLOY_APP_CONTAINER_NAME` if your existing service uses another name. Set
+`DEPLOY_QUADLET_DIR` or `DEPLOY_CADDY_CONFIG_PATH` when your VPS uses
+different paths:
 
 ~~~bash
-UPDATE_CADDY=1 \
-QUADLET_DIR=/home/jk/.config/containers/systemd/iamjk-site \
-CADDY_CONFIG_PATH=/home/jk/caddy/conf/Caddyfile \
-VPS_HOST=YOUR_VPS_HOST \
-VPS_USER=jk \
-VPS_PATH=/home/jk/iamjk-site \
-./scripts/deploy-vps.sh
+DEPLOY_UPDATE_CADDY="1"
+DEPLOY_QUADLET_DIR="/home/jk/.config/containers/systemd/iamjk-site"
+DEPLOY_CADDY_CONFIG_PATH="/home/jk/caddy/conf/Caddyfile"
+DEPLOY_APP_CONTAINER_NAME="iamjk-site"
 ~~~
 
 Do not put Bunny API keys in the repository, shell history, or deployment
@@ -411,6 +543,11 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Keep the dark charcoal surfaces semi-transparent enough for the field to remain visible, but opaque enough for reading.
 - No blur, backdrop blur, glow, or decorative shadow.
 - Keep headings and body copy large enough to carry the message on desktop and mobile.
+- Treat the top navigation as a visible control group: links and the “Say hello”
+  CTA use a shared 48px minimum height, centered labels, and clear hover,
+  current, and focus states.
+- Keep direct interaction feedback quick and content reveals brief enough that
+  scrolling visitors never mistake a delayed animation for a broken page.
 - Preserve reduced-motion support, visible keyboard focus, and no-script access to the content.
 
 ## Sources used for the current implementation notes

@@ -284,7 +284,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
             <p class="contact-copy">Tell me a little about what’s on your mind. Email and mobile are optional, but I’ll need one if you’d like a reply.</p>
             <p class="contact-privacy">I’ll use what you share only to read your message and reply. Please leave out passwords, payment details, government IDs, and private medical information.</p>
           </div>
-          <form class="contact-form" action="/api/contact" method="post">
+          <form class="contact-form" action="/api/contact" method="post" aria-describedby="contact-form-status">
             <div class="contact-form-grid">
               <label>
                 <span>Name or nickname <b aria-hidden="true">*</b></span>
@@ -316,9 +316,12 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
             <input class="contact-trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
             <div class="contact-form-footer">
               <p class="contact-consent">I’ll use these details only to review your message and reply.</p>
-              <button class="primary-link contact-submit" type="submit">Send message <span aria-hidden="true">↗</span></button>
+              <button class="primary-link contact-submit" type="submit">
+                <span data-contact-submit-label>Send message</span>
+                <span aria-hidden="true">↗</span>
+              </button>
             </div>
-            <p class="contact-status" role="status" aria-live="polite"></p>
+            <p id="contact-form-status" class="contact-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"></p>
           </form>
         </div>
       </section>
@@ -335,14 +338,33 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
       const contactForm = document.querySelector<HTMLFormElement>(".contact-form");
       const contactStatus = document.querySelector<HTMLElement>(".contact-status");
       const contactStarted = contactForm?.querySelector<HTMLInputElement>("[data-contact-started]");
+      const contactSubmitLabel = contactForm?.querySelector<HTMLElement>("[data-contact-submit-label]");
+      const defaultContactSubmitLabel = contactSubmitLabel?.textContent || "Send message";
       if (contactStarted) contactStarted.value = String(Date.now());
+      const setContactBusy = (busy: boolean) => {
+        const submitButton = contactForm?.querySelector<HTMLButtonElement>("button[type=submit]");
+        contactForm?.setAttribute("aria-busy", String(busy));
+        if (submitButton) {
+          submitButton.disabled = busy;
+          submitButton.setAttribute("aria-busy", String(busy));
+        }
+        if (contactSubmitLabel) contactSubmitLabel.textContent = busy ? "Sending…" : defaultContactSubmitLabel;
+      };
+      const announceContactStatus = (className: string, message: string, moveFocus = false) => {
+        if (!contactStatus) return;
+        contactStatus.className = `contact-status ${className}`;
+        contactStatus.textContent = message;
+        if (moveFocus) contactStatus.focus({ preventScroll: true });
+      };
       contactForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!contactStatus) return;
-        contactStatus.className = "contact-status is-pending";
-        contactStatus.textContent = "Checking that everything looks good…";
-        const submitButton = contactForm.querySelector<HTMLButtonElement>("button[type=submit]");
-        if (submitButton) submitButton.disabled = true;
+        if (!contactForm.checkValidity()) {
+          contactForm.reportValidity();
+          return;
+        }
+        announceContactStatus("is-pending", "Checking that everything looks good…");
+        setContactBusy(true);
         try {
           const response = await fetch(contactForm.action, {
             method: "POST",
@@ -353,15 +375,13 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           if (!response.ok) throw new Error(result.message || "I couldn’t send that just now. Please try again in a moment.");
           contactForm.reset();
           if (contactStarted) contactStarted.value = String(Date.now());
-          contactStatus.className = "contact-status is-success";
-          contactStatus.textContent = "Thanks — your message is on its way.";
+          announceContactStatus("is-success", "Thanks — your message is on its way.", true);
           window.turnstile?.reset();
         } catch (error) {
-          contactStatus.className = "contact-status is-error";
-          contactStatus.textContent = error instanceof Error ? error.message : "I couldn’t send that just now. Please try again in a moment.";
+          announceContactStatus("is-error", error instanceof Error ? error.message : "I couldn’t send that just now. Please try again in a moment.", true);
           window.turnstile?.reset();
         } finally {
-          if (submitButton) submitButton.disabled = false;
+          setContactBusy(false);
         }
       });
       const revealTargets = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal], .section-intro, .hero-actions, .hero-footer"));
@@ -369,9 +389,12 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
       if ("IntersectionObserver" in window) {
         const revealObserver = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting) revealTarget(entry.target as HTMLElement);
+            if (entry.isIntersecting) {
+              revealTarget(entry.target as HTMLElement);
+              revealObserver.unobserve(entry.target);
+            }
           });
-        }, { rootMargin: "-10% 0px -12% 0px", threshold: 0.08 });
+        }, { rootMargin: "0px 0px -8% 0px", threshold: 0.04 });
         revealTargets.forEach((element) => revealObserver.observe(element));
       } else {
         revealTargets.forEach(revealTarget);
@@ -546,7 +569,8 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           const delta = Math.min((timestamp - lastFrame) / 1000, 0.05);
           lastFrame = timestamp;
           if (!motionQuery.matches) time += delta;
-          currentScroll += (targetScroll - currentScroll) * (motionQuery.matches ? 1 : 0.08);
+          const scrollEase = motionQuery.matches ? 1 : Math.min(1, delta * 18);
+          currentScroll += (targetScroll - currentScroll) * scrollEase;
           const maxScroll = Math.max(1, document.documentElement.scrollHeight - height);
           scrollProgress = Math.max(0, Math.min(1, currentScroll / maxScroll));
           updateSectionState();
@@ -677,6 +701,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           document.documentElement.style.setProperty("--pointer-shift-y", `${(pointerY * 5).toFixed(2)}px`);
           document.documentElement.style.setProperty("--scene-shift-x", `${(pointerX * -10).toFixed(2)}px`);
           document.documentElement.style.setProperty("--scene-shift-y", `${(pointerY * -10).toFixed(2)}px`);
+          scheduleFrame();
         }, { passive: true });
         document.addEventListener("visibilitychange", () => {
           pageVisible = !document.hidden;

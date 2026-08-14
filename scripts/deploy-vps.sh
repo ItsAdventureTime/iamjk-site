@@ -2,18 +2,129 @@
 set -Eeuo pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-container_image="${CONTAINER_IMAGE:-docker.io/library/node:24-alpine}"
-vps_user="${VPS_USER:-jk}"
-vps_host="${VPS_HOST:-}"
-vps_path="${VPS_PATH:-/home/jk/iamjk-site}"
-pnpm_version="${PNPM_VERSION:-11.15.1}"
-release_image="${RELEASE_IMAGE:-localhost/iamjk-site:release}"
-quadlet_dir="${QUADLET_DIR:-/home/$vps_user/.config/containers/systemd/iamjk-site}"
+config_path="${DEPLOY_CONFIG_FILE:-$project_dir/.deploy-vps.conf}"
+init_config=0
+
+usage() {
+  printf '%s\n' \
+    'Usage: ./scripts/deploy-vps.sh [--init] [--config PATH]' \
+    '' \
+    'Normal update:' \
+    '  ./scripts/deploy-vps.sh' \
+    '' \
+    'Options:' \
+    '  --init          Create the local deployment config interactively.' \
+    '  --config PATH   Use a different local config file.' \
+    '  --help          Show this help.' \
+    '' \
+    'One-off environment-variable overrides remain supported for automation.'
+}
+
+while (($# > 0)); do
+  case "$1" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --init)
+      init_config=1
+      shift
+      ;;
+    --config)
+      if (($# < 2)); then
+        printf '%s\n' '--config requires a path.' >&2
+        exit 2
+      fi
+      config_path="$2"
+      shift 2
+      ;;
+    *)
+      printf 'Unknown option: %s\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ "$config_path" != /* ]]; then
+  config_path="$project_dir/$config_path"
+fi
+
+init_deploy_config() {
+  local host user path
+
+  if [[ -e "$config_path" ]]; then
+    printf 'Deployment config already exists: %s\n' "$config_path" >&2
+    printf '%s\n' 'Edit it directly or choose another path with --config.' >&2
+    exit 1
+  fi
+  if [[ ! -t 0 ]]; then
+    printf '%s\n' 'Interactive setup requires a terminal. Copy deploy/iamjk-site.local.conf.example or provide VPS_HOST for a one-off deployment.' >&2
+    exit 2
+  fi
+
+  read -r -p 'VPS host (required): ' host
+  read -r -p 'VPS user [jk]: ' user
+  read -r -p "VPS path [/home/${user:-jk}/iamjk-site]: " path
+  user="${user:-jk}"
+  path="${path:-/home/$user/iamjk-site}"
+
+  if [[ -z "$host" || "$host" == *[[:space:]]* ]]; then
+    printf '%s\n' 'VPS host must be non-empty and contain no whitespace.' >&2
+    exit 2
+  fi
+  if [[ -z "$user" || "$user" == *[[:space:]]* ]]; then
+    printf '%s\n' 'VPS user must be non-empty and contain no whitespace.' >&2
+    exit 2
+  fi
+  if [[ -z "$path" ]]; then
+    printf '%s\n' 'VPS path must be non-empty.' >&2
+    exit 2
+  fi
+
+  umask 077
+  mkdir -p -- "$(dirname -- "$config_path")"
+  {
+    printf '%s\n' '# Local-only iamjk.site deployment settings.'
+    printf '%s\n' '# Do not add secrets here; VPS Podman secrets stay on the server.'
+    printf 'DEPLOY_VPS_HOST=%q\n' "$host"
+    printf 'DEPLOY_VPS_USER=%q\n' "$user"
+    printf 'DEPLOY_VPS_PATH=%q\n' "$path"
+  } > "$config_path"
+  chmod 600 "$config_path"
+  printf 'Created %s (mode 600).\n' "$config_path"
+  printf '%s\n' 'Run ./scripts/deploy-vps.sh to deploy the current checkout.'
+}
+
+if (( init_config )); then
+  init_deploy_config
+  exit 0
+fi
+
+if [[ -f "$config_path" ]]; then
+  # shellcheck disable=SC1090
+  source "$config_path"
+fi
+
+container_image="${CONTAINER_IMAGE:-${DEPLOY_CONTAINER_IMAGE:-docker.io/library/node:24-alpine}}"
+vps_user="${VPS_USER:-${DEPLOY_VPS_USER:-jk}}"
+vps_host="${VPS_HOST:-${DEPLOY_VPS_HOST:-}}"
+vps_path="${VPS_PATH:-${DEPLOY_VPS_PATH:-/home/$vps_user/iamjk-site}}"
+pnpm_version="${PNPM_VERSION:-${DEPLOY_PNPM_VERSION:-11.15.1}}"
+release_image="${RELEASE_IMAGE:-${DEPLOY_RELEASE_IMAGE:-localhost/iamjk-site:release}}"
+quadlet_dir="${QUADLET_DIR:-${DEPLOY_QUADLET_DIR:-/home/$vps_user/.config/containers/systemd/iamjk-site}}"
 quadlet_file="$quadlet_dir/iamjk-site.container"
-caddy_config_path="${CADDY_CONFIG_PATH:-/home/$vps_user/caddy/conf/Caddyfile}"
-update_caddy="${UPDATE_CADDY:-1}"
-app_container_name="${APP_CONTAINER_NAME:-}"
-remote_build_context="${REMOTE_BUILD_CONTEXT:-$vps_path/.iamjk-site-build-context}"
+caddy_config_path="${CADDY_CONFIG_PATH:-${DEPLOY_CADDY_CONFIG_PATH:-/home/$vps_user/caddy/conf/Caddyfile}}"
+update_caddy="${UPDATE_CADDY:-${DEPLOY_UPDATE_CADDY:-1}}"
+app_container_name="${APP_CONTAINER_NAME:-${DEPLOY_APP_CONTAINER_NAME:-}}"
+remote_build_context="${REMOTE_BUILD_CONTEXT:-${DEPLOY_REMOTE_BUILD_CONTEXT:-$vps_path/.iamjk-site-build-context}}"
+
+if [[ -z "$vps_host" ]]; then
+  printf '%s\n' 'No VPS host configured.' >&2
+  printf '%s\n' 'Run ./scripts/deploy-vps.sh --init once, or set VPS_HOST for a one-off deployment.' >&2
+  exit 2
+fi
+
 backup_stamp="$(date -u +%Y%m%d%H%M%S)"
 # macOS can reject ControlPath values longer than the Unix socket limit.
 # Keep this path short; %C still makes the socket unique per SSH destination.
@@ -27,11 +138,6 @@ cleanup() {
   rmdir "$ssh_control_dir" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
-
-if [[ -z "$vps_host" ]]; then
-  printf 'Set VPS_HOST before deploying.\n' >&2
-  exit 2
-fi
 
 for command_name in podman rsync ssh; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -252,6 +358,8 @@ rsync --archive --delete --human-readable --itemize-changes --info=progress2 --p
   --exclude='.openai/' \
   --exclude='.serena/' \
   --exclude='.ssh/' \
+  --exclude='.deploy-vps.conf' \
+  --exclude='skills-lock.json' \
   --exclude='.env*' \
   --exclude='id_*' \
   --exclude='*.crt' \
