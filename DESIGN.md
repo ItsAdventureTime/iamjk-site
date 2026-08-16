@@ -1,7 +1,7 @@
 # iamjk.site design guide
 
 **Status:** implementation reference for the current site
-**Reviewed:** 2026-08-14
+**Reviewed:** 2026-08-16
 **Audience:** future content, visual, and implementation changes
 
 iamjk.site is a personal field guide for Juan Karlo “JK” de Guzman. It is deliberately personal rather than a work portfolio: visitors should meet a person through his faith, language, systems curiosity, technology shifts, books, ideas, and practical way of learning.
@@ -12,6 +12,10 @@ The 2026-08-08 context refresh adds public details about JK’s early Windows 95
 
 - Use American English (`en-US`).
 - Write in a natural, conversational first-person voice.
+- Keep sentences short, clear, and easy to scan.
+- Prefer active voice and concrete wording; cut filler, vague claims, and sales language.
+- Keep navigation labels, form instructions, and status messages direct and easy to understand.
+- Proofread public copy and avoid em dashes or en dashes.
 - Prefer concrete details over broad positioning language.
 - Keep the tone thoughtful, direct, warm, and slightly curious.
 - Do not publish JK’s age or year of birth.
@@ -107,6 +111,13 @@ Motion is part of the page’s structure, not decoration:
 - Scrolling changes the scene target and reveal state; section geometry is sampled only when scroll or resize marks it dirty.
 - `IntersectionObserver` adds content reveals without relying on experimental scroll-timeline APIs.
 - CSS transforms, opacity, and `requestAnimationFrame` provide the cross-engine baseline.
+- GSAP `3.15.0` owns the small interaction layer: `gsap.matchMedia()` scopes
+  fine-pointer and reduced-motion behavior, while `ScrollTrigger` drives the
+  thin progress cue without scroll-jacking or pinned reading content.
+- SmoothUI is used as a visual reference for deliberate surfaces, clear
+  interactive states, and compact motion cues. Its React/Tailwind components
+  are adapted as Astro/CSS patterns here rather than adding a second UI
+  runtime or migrating the page’s architecture.
 - Cap canvas pixel density on mobile and stop scheduling frames while the document is hidden; resume cleanly on visibility changes.
 - `prefers-reduced-motion: reduce` must remove non-essential movement while retaining content, contrast, and section state.
 - Never make text unreadable until an animation completes.
@@ -151,7 +162,7 @@ Keep animations short, interruptible, and subordinate to reading. Use transforms
 
 ## Current standards review
 
-The 2026-08-14 review keeps the pinned Astro 7 stack and applies the current
+The 2026-08-16 review keeps the pinned Astro 7 stack and applies the current
 standards baseline without adding a UI framework or client-side routing:
 
 - **WCAG 2.2:** preserve readable contrast, reflow at narrow widths and zoom,
@@ -160,8 +171,15 @@ standards baseline without adding a UI framework or client-side routing:
 - **WAI-ARIA/APG:** use native landmarks and links first; use
   `aria-current="location"` only for the active same-page section link.
 - **Reduced motion:** `prefers-reduced-motion: reduce` disables the continuous
-  canvas scheduler and pointer parallax. Section/readout changes remain
-  available as static updates when the visitor scrolls.
+  canvas scheduler, pointer parallax, GSAP entrance motion, and non-essential
+  CSS delays. Section/readout changes remain available as static updates when
+  the visitor scrolls.
+- **GSAP interaction boundary:** `gsap.matchMedia()` owns media-query setup and
+  cleanup; `ScrollTrigger` is limited to the scroll-progress indicator. No
+  scroll-jacking, pinned reading panels, or layout-affecting animation is used.
+- **SmoothUI adaptation:** the site adopts the reference repo’s component-level
+  emphasis on visible states, tactile controls, and restrained transitions
+  while keeping the existing Astro/CSS architecture and server-rendered page.
 - **Responsive interaction:** keep the viewport zoomable, use flexible grids,
   preserve source-order reading flow, and give primary touch targets at least
   44px of usable height where the layout permits. The primary navigation and
@@ -175,23 +193,28 @@ Reference pages reviewed:
 - https://www.w3.org/TR/WCAG22/
 - https://www.w3.org/WAI/ARIA/apg/
 - https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion
+- https://www.w3.org/WAI/WCAG22/Techniques/css/C39
+- https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scroll-behavior
 - https://web.dev/articles/accessible-responsive-design
 - https://docs.astro.build/en/guides/view-transitions/
 - https://astro.build/blog/astro-7/
+- https://gsap.com/docs/v3/GSAP/gsap.matchMedia%28%29/
+- https://gsap.com/docs/v3/Plugins/ScrollTrigger/
+- https://github.com/educlopez/smoothui
 
 ## Change checklist
 
 Before accepting a visual change:
 
-1. Run `pnpm run check`.
-2. Run `pnpm test`, which builds first and checks the rendered document.
+1. Run `jk-sbx-project ensure` and verify `jk-sbx-project exec ./scripts/sandbox-node.sh node --version` reports Node 24.18.0.
+2. Run `jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm sh -c 'CI=true pnpm install --frozen-lockfile && CI=true pnpm run check && CI=true pnpm test'`.
 3. Confirm `dist/index.html` and `dist/_astro/*.js` are produced.
 4. Run the source and generated-output privacy scans in `SECURITY.md`.
-5. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text; verify that every primary navigation control and the “Say hello” CTA share a 48px height and remain discoverable in the mobile rail.
+5. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text; verify that every primary navigation control and the “Say hello” CTA share a 48px height, remain discoverable in the mobile rail, and expose a clear overflow cue when needed.
 6. Check keyboard focus, reduced motion, and no-script behavior.
 7. Confirm no blur, backdrop blur, shadow, purple/violet palette drift, city-level location, age/year of birth, or email address has returned.
 8. Review the diff and keep the generated `dist/` output out of Git.
-9. For releases, use `scripts/deploy-vps.sh` so the pinned Node 24 Alpine Podman build uses an isolated Linux `node_modules` tmpfs, the VPS builds natively, the rootless Caddyfile is formatted and validated before a graceful reload, endpoint smoke checks run, and only then does the remote VPS Bunny purge happen.
+9. For releases, use `scripts/deploy-vps.sh` so the pinned Node 24 Alpine image is built for the VPS inside the Docker Sandbox, only the saved image is transferred, the rootless Caddyfile is formatted and validated before a graceful reload, endpoint smoke checks run, and only then does the remote VPS Bunny purge happen.
 
 ## Implementation source
 

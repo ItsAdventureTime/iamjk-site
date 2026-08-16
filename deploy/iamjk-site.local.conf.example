@@ -2,18 +2,17 @@
 #   ./scripts/deploy-vps.sh --init
 #
 # This file contains routing settings only. Never put Podman secret values here.
-# .deploy-vps.conf is ignored by Git and excluded from the VPS build context.
+# .deploy-vps.conf is ignored by Git and never transferred to the VPS.
 
 DEPLOY_VPS_HOST="your-vps-hostname"
 DEPLOY_VPS_USER="jk"
 DEPLOY_VPS_PATH="/home/jk/iamjk-site"
 
 # Optional overrides. The normal deployment uses the pinned project defaults.
-# DEPLOY_CONTAINER_IMAGE="docker.io/library/node:24-alpine"
 # DEPLOY_PNPM_VERSION="11.15.1"
 # DEPLOY_UPDATE_CADDY="1"
 # DEPLOY_CADDY_CONFIG_PATH="/home/jk/caddy/conf/Caddyfile"
 # DEPLOY_QUADLET_DIR="/home/jk/.config/containers/systemd/iamjk-site"
 # DEPLOY_APP_CONTAINER_NAME="iamjk-site"
 # DEPLOY_RELEASE_IMAGE="localhost/iamjk-site:release"
-# DEPLOY_REMOTE_BUILD_CONTEXT="/home/jk/iamjk-site/.iamjk-site-build-context"
+# DEPLOY_TARGET_PLATFORM="linux/amd64"

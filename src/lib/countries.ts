@@ -3,7 +3,7 @@ const ISO_COUNTRY_CODES = `AF AL DZ AS AD AO AI AQ AG AR AM AW AU AT AZ BS BH BD
 const excludedCodes = new Set(["AQ"]);
 
 export const countryCodes = ISO_COUNTRY_CODES.split(" ").filter((code) => !excludedCodes.has(code));
-const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+const displayNames = new Intl.DisplayNames(["en-US"], { type: "region" });
 
 export const countries = countryCodes
   .map((code) => ({ code, name: displayNames.of(code) ?? code }))

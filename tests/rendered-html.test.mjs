@@ -19,7 +19,7 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(html, /CMF Buds Pro 2/i);
   assert.match(html, /Fedora Kinoite/i);
   assert.match(html, /Windows 95/i);
-  assert.match(html, /taught online English since 2019/i);
+  assert.match(html, /taught English online since 2019/i);
   assert.match(html, /Podman/i);
   assert.match(html, /contact-form/i);
   assert.match(html, /data-action="turnstile-spin-v2"/i);
@@ -35,11 +35,23 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(html, /Skip to content/i);
   assert.match(html, /<html lang="en-US">/i);
   assert.match(html, /aria-label="Primary navigation"/i);
+  assert.match(html, /href="#strengths"/i);
+  assert.match(html, /href="#details"/i);
+  assert.match(html, /001 \/ 008/i);
+  assert.match(html, /data-callback="iamjkTurnstileReady"/i);
+  assert.match(html, /data-expired-callback="iamjkTurnstileExpired"/i);
+  assert.match(html, /data-error-callback="iamjkTurnstileError"/i);
   assert.doesNotMatch(html, /No funnel|No pitch deck|Build a life with enough substance|No single <span>lane/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|SkeletonPreview/i);
 
   const source = await readFile(new URL("../src/pages/index.astro", import.meta.url), "utf8");
   assert.match(source, /requestAnimationFrame/i);
+  assert.match(source, /import \{ gsap \} from "gsap"/i);
+  assert.match(source, /import \{ ScrollTrigger \} from "gsap\/ScrollTrigger"/i);
+  assert.match(source, /gsap\.matchMedia\(\)/i);
+  assert.match(source, /gsap\.registerPlugin\(ScrollTrigger\)/i);
+  assert.match(source, /iamjkTurnstileExpired/i);
+  assert.match(source, /__iamjkTurnstileState/i);
   assert.match(source, /prefers-reduced-motion/i);
   assert.match(source, /DETAIL/);
   assert.match(source, /const focusY = height \* 0\.46/);
@@ -85,6 +97,9 @@ test("builds the personal site as a complete static document", async () => {
   assert.match(css, /\.contact-form/);
   assert.match(css, /\.cf-turnstile/);
   assert.match(css, /min-height:\s*44px/);
+  assert.match(css, /\.scroll-progress/);
+  assert.match(css, /min-height:\s*48px/);
+  assert.doesNotMatch(css, /@keyframes scene-wave[^}]*margin-left:/i);
   assert.match(css, /\.process-list li:last-child\s*\{\s*border-bottom:\s*0/i);
   assert.doesNotMatch(css, /\.card-number\s*\{[^}]*margin-bottom:\s*auto/i);
   assert.match(css, /\.card-arrow\s*\{[^}]*margin-top:\s*auto/i);

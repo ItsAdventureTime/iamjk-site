@@ -30,6 +30,7 @@
 
 # local deployment target (never commit VPS routing details)
 /.deploy-vps.conf
+/.iamjk-site-release.tar
 
 # debug
 npm-debug.log*

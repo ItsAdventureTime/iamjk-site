@@ -1,6 +1,6 @@
 # Security and privacy guide
 
-**Reviewed:** 2026-08-14
+**Reviewed:** 2026-08-16
 **Scope:** public iamjk.site source, contact endpoint, container runtime, and Git release workflow
 
 The 2026-08-08 personal-context review informs the public copy. Only the
@@ -39,8 +39,9 @@ revoke it first and follow GitHub's sensitive-data removal procedure.
 Run the build and scan both source files and generated output:
 
 ```bash
-pnpm run check
-pnpm test
+jk-sbx-project ensure
+jk-sbx-project exec ./scripts/sandbox-node.sh node --version
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm sh -c 'CI=true pnpm run check && CI=true pnpm test'
 rg -n -i \
   'mailto:|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}' \
   src app public astro.config.mjs package.json
@@ -142,12 +143,14 @@ account, configure Git to use GitHub CLI credentials, verify the remote, then
 push the local commit:
 
 ```bash
-git add README.md SECURITY.md
-git commit -m "Describe the change"
 gh auth status
 gh auth setup-git --hostname github.com
 gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
 git remote set-url origin https://github.com/ItsAdventureTime/iamjk-site.git
+git add <reviewed-files>
+git diff --cached --check
+git commit -S -m "Describe the change"
+git verify-commit HEAD
 git push origin main
 ```
 
@@ -163,11 +166,22 @@ transport; if signing is enabled, verification comes from the signed commit, the
 registered signing public key, and the matching GitHub author email. A failed
 signing agent must not be worked around by publishing private key material.
 
-## 1Password-signed Git
+The normal post-update contract is documented in
+[`RELEASE_WORKFLOW.md`](RELEASE_WORKFLOW.md). It requires the Docker Sandbox
+validation gate, updated project guides where behavior or commands changed, an
+HTTPS `origin`, and a verified signed commit before publication. GitHub CLI
+cannot create the local Git index or commit object by itself; it supplies the
+authenticated HTTPS credential for Git transport and verifies the remote commit
+after publication. Do not interpret “gh-only” as permission to skip local
+signature verification or to publish an unsigned commit.
 
-Private signing and authentication keys stay in the 1Password SSH agent. The
-repository uses SSH commit signing through the 1Password signer; no private key
-belongs in this checkout.
+## Signing key handling
+
+The current macOS checkout has a legacy 1Password SSH signer configuration, but
+SSH signing is not the normal release path under the project’s HTTPS-only,
+no-SSH-key policy. Do not invoke that signer for a release. Configure an
+approved non-SSH signer, such as GPG or S/MIME, and register its public key with
+the matching GitHub account before publishing.
 
 Check the effective local signing configuration without printing secrets:
 
@@ -180,18 +194,20 @@ git log -1 --show-signature
 GitHub can show a commit as verified only after the matching public key is
 registered in the GitHub account’s **Signing keys** and the commit author email
 matches the account. Do not copy private key material into the repository or
-shell history.
+shell history. See [`RELEASE_WORKFLOW.md`](RELEASE_WORKFLOW.md) for the required
+stop condition when no approved signer is available.
 
 ## Deployment check
 
-The canonical release path runs tests on macOS through Podman, transfers a
-sanitized source build context to the VPS, builds the standalone Node 24 Alpine
-image natively on the VPS, restarts the application Quadlet, gracefully reloads
-the running Caddy configuration only after formatting and validation, and then
-invokes the VPS-side bunny-purge script over SSH. The rsync exclusions keep
-`.env` files, `.deploy-vps.conf`, private-key/certificate files, generated
-output, and local agent metadata out of the VPS build context. Before purging
-the CDN, it checks the new contact markup internally and confirms the public
+The canonical release path runs tests and the target-platform image build
+through the project Docker Sandbox, transfers one saved release-image archive
+to the VPS, lets rootless Podman load the image, restarts the application
+Quadlet, gracefully reloads the running Caddy configuration only after
+formatting and validation, and then invokes the VPS-side bunny-purge script
+over SSH. The local `.dockerignore` keeps `.env` files, `.deploy-vps.conf`,
+private-key/certificate files, generated output, and local agent metadata out
+of the image build context. The VPS does not build or compile the application.
+Before purging the CDN, it checks the new contact markup internally and confirms the public
 `GET /api/contact` route returns `405 Method Not Allowed`, proving Caddy
 reaches the Node endpoint.
 
@@ -208,7 +224,7 @@ Then deploy later updates with:
 ./scripts/deploy-vps.sh
 ~~~
 
-The helper runs the project checks before rsync. If diagnosing it manually, run
+The helper runs the project checks and image build before rsync. If diagnosing it manually, run
 the source and generated-output privacy scan after the container build:
 
 ~~~bash
@@ -229,10 +245,10 @@ same-origin Astro module while keeping inline event handlers disabled. See
   https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository
 - GitHub preventing data leaks:
   https://docs.github.com/en/code-security/tutorials/secure-your-organization/prevent-data-leaks
-- 1Password SSH commit signing:
-  https://www.1password.dev/ssh/git-commit-signing
-- 1Password SSH agent:
-  https://www.1password.dev/ssh/agent
+- Docker Sandboxes:
+  https://docs.docker.com/ai/sandboxes/
+- Docker multi-platform builds:
+  https://docs.docker.com/build/building/multi-platform/
 - Podman machine:
   https://docs.podman.io/en/latest/markdown/podman-machine.1.html
 - Podman run:

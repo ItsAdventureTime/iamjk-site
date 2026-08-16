@@ -2,7 +2,7 @@
 
 Personal website for Juan Karlo “JK” de Guzman. The site is intentionally personal rather than professional: it covers his interests, faith, teaching, technology, reading, ideas, and the questions he keeps returning to.
 
-The project is an Astro application. The public page is prerendered, while the contact endpoint runs in the Node adapter so Turnstile and Resend secrets stay server-side. Caddy reverse-proxies the application container. The page keeps its motion dependency-free with a shared Canvas 2D field, CSS-rendered section motifs, pointer/scroll response, and IntersectionObserver reveals.
+The project is an Astro application. The public page is prerendered, while the contact endpoint runs in the Node adapter so Turnstile and Resend secrets stay server-side. Caddy reverse-proxies the application container. The page combines a shared Canvas 2D field, CSS-rendered section motifs, a small GSAP interaction layer, pointer/scroll response, and IntersectionObserver reveals.
 
 ## Current stack
 
@@ -10,6 +10,7 @@ The project is an Astro application. The public page is prerendered, while the c
 - Node.js `>=24.18.0`, aligned with the current Node 24 LTS line.
 - pnpm `11.15.1`, recorded through `packageManager` in `package.json`; verify the installed CLI matches it.
 - TypeScript `6.0.3`.
+- GSAP `3.15.0` for scoped entrance motion, pointer response, and scroll progress.
 - Caddy reverse proxy for the VPS runtime.
 - Cloudflare Turnstile server-side verification and Resend email delivery.
 - No database, remote font, or public email address.
@@ -22,7 +23,10 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `app/globals.css` — design tokens, responsive layout, motifs, surfaces, motion, and browser fallbacks.
 - `astro.config.mjs` — Node standalone output and canonical site URL.
 - `src/pages/api/contact.ts` — same-origin JSON contact endpoint, Turnstile verification, validation, throttling, and Resend delivery.
-- `Containerfile` — reproducible Node 24 production image.
+- `Containerfile` — reproducible Node 24 production image with a native
+  sandbox build stage and target-platform runtime stage.
+- `.dockerignore` — keeps credentials, agent metadata, dependencies, and
+  generated artifacts out of the local image-build context.
 - `pnpm-workspace.yaml` — explicit allowlist for the reviewed `esbuild` and `sharp` install scripts required by the build.
 - `deploy/iamjk-site.container.example` — Quadlet template with secret-to-environment mappings.
 - `deploy/iamjk-site.local.conf.example` — local deployment-target template; copy it only when you prefer manual setup.
@@ -30,42 +34,47 @@ The intended production deployment is the existing Fedora CoreOS VPS with a root
 - `tests/rendered-html.test.mjs` — build-output and design-invariant checks, including email-address exclusions.
 - `DESIGN.md` — visual, content, responsive, motion, and accessibility guide.
 - `SECURITY.md` — privacy, email scanning, GitHub protection, and signed Git release guide.
-- `scripts/deploy-vps.sh` — local validation, sanitized rsync upload, native VPS Podman build, and Bunny purge release helper.
+- `RELEASE_WORKFLOW.md` — the normal post-update documentation, sandbox, signing, and HTTPS release gate.
+- `scripts/deploy-vps.sh` — sandbox validation/build, release-image transfer, VPS runtime checks, and Bunny purge release helper.
+- `scripts/sandbox-node.sh` — pinned Node 24.18.0 runtime wrapper for project commands inside the Docker Sandbox.
 - `public/` — the static favicon and intentionally used public assets.
 - `.deploy-vps.conf` — ignored local deployment target created by `scripts/deploy-vps.sh --init`.
 - `dist/` — generated release output; ignored by Git.
 
 ## Local development
 
-Use the package-manager version recorded in `package.json` and the lockfile. Check the executable first; if it is not `11.15.1`, install that version with npm or another approved pnpm installer:
+Use the runtime and package-manager versions recorded in `package.json` and the lockfile. The Sandbox base shell may have a different agent-runtime Node version, so use the project wrapper:
 
 ```bash
-pnpm --version
+jk-sbx-project ensure
+jk-sbx-project exec ./scripts/sandbox-node.sh node --version
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm pnpm --version
 ```
 
-If that does not print `11.15.1`, install the pinned CLI once:
+Initialize the project sandbox and install dependencies through the pinned
+Node 24.18.0 runtime:
 
 ```bash
-npm install --global pnpm@11.15.1
+jk-sbx-project ensure
+jk-sbx-project exec ./scripts/sandbox-node.sh node --version
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm pnpm install --frozen-lockfile
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm pnpm dev
 ```
 
-Then install dependencies and start Astro:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-Open the local URL Astro prints. Build output is written to `dist/`; the server endpoint is emitted under `dist/server/`.
+Open the local URL Astro prints. Build output is written to `dist/`; the server endpoint is emitted under `dist/server/`. Do not install dependencies or run the project toolchain directly on macOS; `jk-sbx-project` keeps execution in the deterministic Docker Sandbox, while `sandbox-node.sh` supplies the project-pinned Node runtime.
 
 ## Validation
 
-Run the source checks and rendered-output test locally:
+Run the source checks and rendered-output test in the project sandbox:
 
 ```bash
-pnpm run check
-pnpm test
+jk-sbx-project ensure
+jk-sbx-project exec ./scripts/sandbox-node.sh node --version
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm sh -c 'CI=true pnpm install --frozen-lockfile && CI=true pnpm run check && CI=true pnpm test'
 ```
+
+The deployment helper uses the same wrapper, so the Sandbox base shell’s Node
+version does not determine the project runtime.
 
 The `test` script runs `astro build` before Node’s test runner checks
 `dist/client/index.html`. It verifies metadata, important copy, section motifs,
@@ -76,8 +85,9 @@ For UI or interaction changes, run a browser smoke check at a desktop width and
 at least one narrow mobile width. Confirm that the primary navigation is
 visibly grouped, every navigation link and the “Say hello” CTA share a 48px
 height, and the mobile rail scrolls without creating page-level horizontal
-overflow. Also check keyboard focus, the active section state, contact-form
-pending/success/error feedback, and `prefers-reduced-motion` behavior.
+overflow. Also check keyboard focus, the active section state, the GSAP
+scroll-progress cue, contact-form pending/success/error feedback, and
+`prefers-reduced-motion` behavior.
 
 ## Standards baseline
 
@@ -92,6 +102,14 @@ The repository stays on its pinned Astro 7 stack. Astro View Transitions are
 not enabled because this is one prerendered document and does not need a
 client-side routing layer. Revisit that decision only with route-announcement,
 focus, and reduced-motion tests in place.
+
+The interaction layer uses GSAP `3.15.0` with `gsap.matchMedia()` so pointer
+motion and entrance transitions can be scoped and reverted cleanly. GSAP
+`ScrollTrigger` is limited to the non-essential scroll-progress indicator; the
+page does not hijack scrolling or pin reading content. SmoothUI is a reference
+for the adapted surface, focus, hover, and tactile-control language rather than
+a second React/Tailwind runtime, which keeps this Astro page lightweight and
+consistent with its existing architecture.
 
 The standards references used for the current review are maintained in
 [`DESIGN.md`](DESIGN.md).
@@ -130,24 +148,24 @@ or change any other site. Caddy should proxy `iamjk.site` to
 `header_up Host {host}`. The endpoint independently requires the exact public
 `Origin` and the browser submits JSON. Do not expose port 4321 publicly.
 
-For a production-style local check:
+For a production-style local check, keep execution inside the sandbox:
 
 ```bash
-pnpm run build
-pnpm run preview
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm pnpm run build
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm pnpm run preview
 ```
 
-Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, and custom properties. The canvas caps mobile pixel density and suspends its frame scheduler while the document is hidden to reduce Safari/WebKit and Chromium/Blink battery and main-thread work. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Run a browser smoke check when an available browser runtime is connected; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
+Node 25 and later do not ship the Corepack executable, so this guide invokes `pnpm` directly after checking its version. The current app uses standard Canvas 2D, `requestAnimationFrame`, `IntersectionObserver`, CSS Grid, transforms, custom properties, and the scoped GSAP interaction layer described above. The canvas caps mobile pixel density and suspends its frame scheduler while the document is hidden to reduce Safari/WebKit and Chromium/Blink battery and main-thread work. The source avoids experimental `animation-timeline` APIs and browser-specific prefixes. Run a browser smoke check when an available browser runtime is connected; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
 
 ## Preferred macOS release workflow
 
-The preferred release path runs on macOS:
+The preferred release path runs from macOS with project execution isolated in
+the Docker Sandbox:
 
-1. Podman runs the pinned Node and pnpm test pipeline in a disposable container.
-2. The helper starts the Podman machine when it is not running.
-3. rsync transfers a sanitized source build context to the VPS.
-4. Podman builds the application image natively on the VPS and restarts the Quadlet service.
-5. SSH invokes the VPS-side bunny-purge script only after the service restarts.
+1. `jk-sbx-project` runs the pinned pnpm install, check, rendered-output test, and target-platform image build.
+2. The helper transfers one saved release-image archive to the VPS.
+3. Rootless Podman loads the image and restarts the Quadlet service; it does not build or compile the application.
+4. SSH invokes the VPS-side bunny-purge script only after the service restarts.
 
 ## Update an existing VPS deployment
 
@@ -184,22 +202,20 @@ location, so it can also be called from another working directory.
 
 The helper is the release gate. It will:
 
-1. start the local Podman machine if needed;
-2. install the pinned pnpm version in a disposable Node 24 Alpine container;
+1. start or reuse the deterministic Docker Sandbox;
+2. install the pinned pnpm version inside the sandbox;
 3. run the frozen-lockfile check and rendered-output test;
-4. verify the four existing Podman secrets on the VPS;
-5. synchronize a sanitized build context, excluding Git, agent metadata,
-   `skills-lock.json`, `.deploy-vps.conf`, dependencies, generated output,
-   environment files, and common key/certificate extensions;
-6. build the image natively on the VPS and restart `iamjk-site.service`;
+4. verify the four existing Podman secrets on the VPS and update the Quadlet;
+5. detect the VPS architecture and build the matching image in the Docker Sandbox;
+6. transfer the saved image archive, let VPS Podman load it, and restart `iamjk-site.service`;
 7. check the running page and contact endpoint;
 8. format, validate, and gracefully reload Caddy; then
 9. verify the public endpoint before invoking the VPS-side `bunny-purge`.
 
 Do not run `podman build`, `systemctl restart`, or `bunny-purge` manually for a
-normal update. The helper deliberately builds on the VPS so the image matches
-the VPS architecture, and it stops before the CDN purge if the app, Caddy, or
-public API checks fail.
+normal update. The helper builds for the VPS architecture inside the Docker
+Sandbox, transfers only the release image, and stops before the CDN purge if
+the app, Caddy, or public API checks fail.
 
 If the VPS uses non-default paths or a non-generated container name, add the
 optional settings to `.deploy-vps.conf`:
@@ -209,6 +225,7 @@ DEPLOY_UPDATE_CADDY="1"
 DEPLOY_QUADLET_DIR="/home/jk/.config/containers/systemd/iamjk-site"
 DEPLOY_CADDY_CONFIG_PATH="/home/jk/caddy/conf/Caddyfile"
 DEPLOY_APP_CONTAINER_NAME="iamjk-site"
+DEPLOY_TARGET_PLATFORM="linux/amd64"
 ```
 
 Use `DEPLOY_UPDATE_CADDY="0"` only when Caddy is managed separately and its existing
@@ -225,11 +242,11 @@ VPS_HOST=YOUR_VPS_HOST ./scripts/deploy-vps.sh
 
 Use `./scripts/deploy-vps.sh --help` to see the available local options.
 
-The helper requires local `podman`, `rsync`, and `ssh`, plus SSH access to the
-VPS. The VPS requires rootless Podman, the existing `iamjk-site.service`, the
+The helper requires local `jk-sbx-project`, `rsync`, and `ssh`, plus SSH access
+to the VPS. The VPS requires rootless Podman, the existing `iamjk-site.service`, the
 `caddy.network`, all four application secrets, and the VPS-side `bunny-purge`
 command. No secret values belong in the command line, repository, image, or
-build context.
+release archive.
 
 The VPS transport is separate from GitHub transport: this helper uses SSH and
 rsync to reach the server and deploy the local checkout. `gh` HTTPS
@@ -251,7 +268,7 @@ after confirming its tag and configuration on the VPS.
 
 ### Current deployment baseline
 
-Reviewed 2026-08-14 against the current official guidance:
+Reviewed 2026-08-16 against the current official guidance:
 
 - Node 24 remains the production line because it is an LTS release; do not
   switch the image to a Current or EOL line without a compatibility review.
@@ -275,24 +292,23 @@ Official references:
 - [Astro deployment guide](https://docs.astro.build/en/guides/deploy/)
 - [Podman Quadlet units](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html)
 - [Caddy graceful reloads](https://caddyserver.com/docs/command-line)
+- [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/)
+- [Docker multi-platform builds](https://docs.docker.com/build/building/multi-platform/)
+- [Node.js releases](https://nodejs.org/en/about/previous-releases)
+- [Docker Official Node image](https://hub.docker.com/_/node)
 - [GitHub deployment environments](https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments) (for a future CI workflow, not this manual helper)
 
-Podman on macOS requires a virtual machine. Install it with Homebrew and
-initialize a machine once:
+The local release gate uses the project Docker Sandbox. Initialize it once and
+reuse it for later updates:
 
 ~~~bash
-brew install podman
-podman machine init
-podman machine start
+jk-sbx-project ensure
+jk-sbx-project exec ./scripts/sandbox-node.sh node --version
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm pnpm --version
 ~~~
 
-On later releases, start the existing machine when necessary:
-
-~~~bash
-podman machine start
-~~~
-
-Run the repeatable deployment helper from the repository root:
+On later releases, the helper starts the existing sandbox automatically. Run
+the repeatable deployment helper from the repository root:
 
 ~~~bash
 cd ~/dev/iamjk-site
@@ -305,23 +321,21 @@ that one-time setup, `./scripts/deploy-vps.sh` is the normal update command;
 there is no need to export VPS variables in each terminal session. The helper
 also works when called outside the repository root.
 
-The helper uses the pinned Node 24 Alpine image by default, installs the
-repository-pinned pnpm version inside the disposable container, and runs the
-frozen-lockfile install and test pipeline. It then transfers a sanitized build
-context with rsync and builds `iamjk-site:release` natively on the VPS. This
-avoids Apple Silicon-to-x86 image incompatibilities. The local test container mounts an ephemeral
-Linux-only node_modules tmpfs, so macOS host modules cannot trigger pnpm's
-non-interactive cleanup prompt. Alpine supplies sh, so the helper does not
-assume Bash. Override the image or pnpm version only when the project runtime
-policy changes. Put any deliberate override in `.deploy-vps.conf` instead of
-adding it to every command:
+The helper installs the repository-pinned pnpm version in the Docker Sandbox and
+runs the frozen-lockfile install and test pipeline there. It then builds
+`iamjk-site:release` for the detected VPS platform in the sandbox, saves the
+image archive, and transfers that archive with rsync. The VPS only runs
+`podman load`, service restart, runtime checks, and Caddy operations; it does
+not build or compile the app. This avoids Apple Silicon-to-x86 image
+incompatibilities. Override the pnpm version or target platform only when the
+project/runtime policy requires it. Put deliberate overrides in
+`.deploy-vps.conf` instead of adding them to every command:
 
 The repository explicitly allows only the `esbuild` and `sharp` dependency
 build scripts. pnpm blocks unreviewed dependency scripts by default; keep this
 allowlist narrow and review it when dependencies change.
 
 ~~~bash
-DEPLOY_CONTAINER_IMAGE="docker.io/library/node:24-alpine"
 DEPLOY_PNPM_VERSION="11.15.1"
 ~~~
 
@@ -337,9 +351,11 @@ both must return the expected application behavior before the CDN is purged.
 The helper is idempotent for both first application installation and later
 updates. It expects the existing rootless Caddy Quadlet, `caddy.network`, the
 four Podman secrets, and the VPS-side `bunny-purge` command to already exist.
-The synced build context excludes Git metadata, agent metadata, generated files,
-dependency directories, `.env` files, and common private-key/certificate
-extensions. Podman secrets remain only on the VPS.
+The local Docker build is narrowed by `.dockerignore`, and the deployment
+transfers only the generated `.iamjk-site-release.tar` archive. Git metadata,
+agent metadata, generated files, dependency directories, `.env` files, and
+common private-key/certificate extensions stay out of the image context.
+Podman secrets remain only on the VPS.
 Set `DEPLOY_UPDATE_CADDY="0"` only when you intentionally manage the Caddy upstream
 yourself; formatting, validation, and the safe reload still run. The helper
 recognizes both the explicit `iamjk-site` name and
@@ -363,21 +379,20 @@ temporarily increase origin traffic while edge nodes refill.
 Manual test fallback, useful when diagnosing the helper:
 
 ~~~bash
-podman run --rm \
-  --volume "$PWD:/workspace" \
-  --workdir /workspace \
-  --tmpfs /workspace/node_modules:notmpcopyup \
-  docker.io/library/node:24-alpine \
-  sh -lc 'npm install --global pnpm@11.15.1 && CI=true pnpm install --frozen-lockfile && CI=true pnpm test'
-
-podman build --tag localhost/iamjk-site:release --file Containerfile .
+jk-sbx-project ensure
+jk-sbx-project exec ./scripts/sandbox-node.sh node --version
+jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm sh -c 'CI=true pnpm install --frozen-lockfile && CI=true pnpm run check && CI=true pnpm test'
+jk-sbx-project exec docker buildx build --pull --platform linux/amd64 --tag localhost/iamjk-site:release --load --file Containerfile .
 ~~~
+
+The release helper performs the production image build inside the Docker
+Sandbox; do not use local Podman as a substitute for the sandbox gate.
 
 ## Fedora CoreOS VPS runtime notes
 
 The macOS helper above is the canonical release path. The VPS receives a
-sanitized source build context, builds its own native OCI image, and runs it as
-the rootless Quadlet service described above. The
+saved OCI image archive, loads it with rootless Podman, and runs it as the
+rootless Quadlet service described above. The
 application Quadlet joins `caddy.network`, and Caddy proxies to the container
 name `iamjk-site:4321`. The loopback-published port is kept as a local
 diagnostic fallback; it is not the Caddy connection path.
@@ -504,19 +519,25 @@ The source context file remains outside this public repository.
 
 ## GitHub CLI and verified releases
 
+After every source, style, content, dependency, configuration, or documentation
+change, follow [`RELEASE_WORKFLOW.md`](RELEASE_WORKFLOW.md) before committing or
+deploying. It is the project’s normal update contract.
+
 Use GitHub CLI for every GitHub remote operation. The repository remote must use
 HTTPS; GitHub CLI supplies the authenticated Git credential, so GitHub pushes do
 not depend on the SSH authentication agent. GitHub CLI authentication does not
-sign commits. The existing 1Password SSH signer is separate and is used only for
-optional commit signatures.
+sign commits. The normal release contract requires an approved non-SSH signer;
+the existing 1Password SSH signer is not used for this workflow.
 
 ```bash
-git add README.md SECURITY.md
-git commit -m "Describe the change"
 gh auth status
 gh auth setup-git --hostname github.com
 gh repo view ItsAdventureTime/iamjk-site --json nameWithOwner,defaultBranchRef
 git remote set-url origin https://github.com/ItsAdventureTime/iamjk-site.git
+git add <reviewed-files>
+git diff --cached --check
+git commit -S -m "Describe the change"
+git verify-commit HEAD
 git push origin main
 ```
 
@@ -525,6 +546,12 @@ the authenticated HTTPS credential for the final Git transport; `git push` is
 the Git operation that publishes the local commit. Do not use `gh repo sync` for
 this release path because it synchronizes from a remote source into a local or
 destination repository rather than publishing the local commit.
+
+Literal `gh`-only local commits are not possible: the local Git index and commit
+object are created by Git. The enforceable boundary is that every GitHub-facing
+operation uses `gh` authentication and an HTTPS `origin`, while the local commit
+is signed and verified before `git push` publishes it. If no approved signer is
+available, stop instead of creating an unsigned commit or switching to SSH keys.
 
 See [SECURITY.md](SECURITY.md) for the full signing, privacy-scan, and
 push-protection checklist.
@@ -536,6 +563,10 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 ## Content and design rules
 
 - Use American English (`en-US`) and a natural, conversational voice.
+- Keep sentences short, clear, and easy to scan.
+- Prefer active voice and concrete wording; cut filler, vague claims, and sales language.
+- Keep navigation labels, form instructions, and status messages direct and easy to understand.
+- Proofread public copy and avoid em dashes or en dashes.
 - Keep the site personal; do not turn it into a résumé or generic portfolio.
 - Do not publish JK’s age or year of birth.
 - Use “Philippines,” not a more precise city.
@@ -560,6 +591,9 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Node official image and Alpine tradeoffs: https://github.com/nodejs/docker-node
 - MDN Canvas optimization: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
 - MDN requestAnimationFrame: https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
+- W3C WCAG 2.2: https://www.w3.org/TR/WCAG22/
+- W3C language of page: https://www.w3.org/WAI/WCAG22/Understanding/language-of-page
+- W3C labels and instructions: https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions
 - Bunny purge cache: https://docs.bunny.net/cdn/purge-cache
 - Bunny purge URL API: https://docs.bunny.net/api-reference/core/purge/purge-url
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/
@@ -577,8 +611,10 @@ The public site intentionally exposes no email address or `mailto:` link. Run th
 - Resend API errors: https://resend.com/docs/api-reference/errors
 - Resend idempotency keys: https://resend.com/docs/dashboard/emails/idempotency-keys
 - GitHub push protection: https://docs.github.com/en/code-security/concepts/secret-security/push-protection
-- 1Password SSH commit signing: https://www.1password.dev/ssh/git-commit-signing
 - GitHub CLI manual: https://cli.github.com/manual/
 - GitHub CLI authentication: https://cli.github.com/manual/gh_auth
+- GitHub CLI Git credential setup: https://cli.github.com/manual/gh_auth_setup-git
+- GitHub commit signing: https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits
+- Project post-update release contract: [`RELEASE_WORKFLOW.md`](RELEASE_WORKFLOW.md)
 
 Review these sources again when changing the runtime, deployment model, security policy, or signing workflow.

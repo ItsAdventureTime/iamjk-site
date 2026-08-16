@@ -11,6 +11,7 @@ usage() {
     '' \
     'Normal update:' \
     '  ./scripts/deploy-vps.sh' \
+    '  Runs the Node 24 gate and image build through jk-sbx-project; the VPS only loads the image.' \
     '' \
     'Options:' \
     '  --init          Create the local deployment config interactively.' \
@@ -106,18 +107,24 @@ if [[ -f "$config_path" ]]; then
   source "$config_path"
 fi
 
-container_image="${CONTAINER_IMAGE:-${DEPLOY_CONTAINER_IMAGE:-docker.io/library/node:24-alpine}}"
 vps_user="${VPS_USER:-${DEPLOY_VPS_USER:-jk}}"
 vps_host="${VPS_HOST:-${DEPLOY_VPS_HOST:-}}"
 vps_path="${VPS_PATH:-${DEPLOY_VPS_PATH:-/home/$vps_user/iamjk-site}}"
 pnpm_version="${PNPM_VERSION:-${DEPLOY_PNPM_VERSION:-11.15.1}}"
 release_image="${RELEASE_IMAGE:-${DEPLOY_RELEASE_IMAGE:-localhost/iamjk-site:release}}"
+target_platform="${TARGET_PLATFORM:-${DEPLOY_TARGET_PLATFORM:-}}"
 quadlet_dir="${QUADLET_DIR:-${DEPLOY_QUADLET_DIR:-/home/$vps_user/.config/containers/systemd/iamjk-site}}"
 quadlet_file="$quadlet_dir/iamjk-site.container"
 caddy_config_path="${CADDY_CONFIG_PATH:-${DEPLOY_CADDY_CONFIG_PATH:-/home/$vps_user/caddy/conf/Caddyfile}}"
 update_caddy="${UPDATE_CADDY:-${DEPLOY_UPDATE_CADDY:-1}}"
 app_container_name="${APP_CONTAINER_NAME:-${DEPLOY_APP_CONTAINER_NAME:-}}"
-remote_build_context="${REMOTE_BUILD_CONTEXT:-${DEPLOY_REMOTE_BUILD_CONTEXT:-$vps_path/.iamjk-site-build-context}}"
+release_archive="$project_dir/.iamjk-site-release.tar"
+remote_release_archive="$vps_path/.iamjk-site-release.tar"
+
+if [[ ! "$pnpm_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'Invalid pnpm version: %s\n' "$pnpm_version" >&2
+  exit 2
+fi
 
 if [[ -z "$vps_host" ]]; then
   printf '%s\n' 'No VPS host configured.' >&2
@@ -132,40 +139,68 @@ ssh_control_dir="$(mktemp -d /tmp/iamjk-site-XXXXXX)"
 ssh_control_path="$ssh_control_dir/control"
 ssh_target="$vps_user@$vps_host"
 ssh_options=(-o ControlMaster=auto -o ControlPersist=5m -o ControlPath="$ssh_control_path")
+ssh_connected=0
 
 cleanup() {
-  ssh "${ssh_options[@]}" -O exit -- "$ssh_target" >/dev/null 2>&1 || true
+  rm -f -- "$release_archive"
+  if (( ssh_connected )); then
+    ssh "${ssh_options[@]}" -- "$ssh_target" \
+      "rm -f -- '$remote_release_archive'" >/dev/null 2>&1 || true
+    ssh "${ssh_options[@]}" -O exit -- "$ssh_target" >/dev/null 2>&1 || true
+  fi
   rmdir "$ssh_control_dir" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
-for command_name in podman rsync ssh; do
+for command_name in jk-sbx-project rsync ssh; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     printf 'Required command not found: %s\n' "$command_name" >&2
     exit 127
   fi
 done
 
-machine_state="$(podman machine inspect --format '{{.State}}' 2>/dev/null || true)"
-case "$machine_state" in
-  running|Running)
-    ;;
-  *)
-    podman machine start
-    ;;
-esac
-
-podman run --rm \
-  --volume "$project_dir:/workspace" \
-  --workdir /workspace \
-  --tmpfs /workspace/node_modules:notmpcopyup \
-  "$container_image" \
-  sh -lc "npm install --global pnpm@$pnpm_version && CI=true pnpm install --frozen-lockfile && CI=true pnpm test"
+(
+  cd -- "$project_dir"
+  jk-sbx-project exec ./scripts/sandbox-node.sh node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 24 || (major === 24 && minor < 18)) { console.error(`Node ${process.version} is below the project minimum 24.18.0.`); process.exit(1); }'
+  jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm --pnpm-version "$pnpm_version" sh -c 'CI=true pnpm install --frozen-lockfile && CI=true pnpm run check && CI=true pnpm test'
+)
 
 printf 'Opening authenticated SSH connection to %s...\n' "$ssh_target"
 ssh "${ssh_options[@]}" -MNf -- "$ssh_target"
+ssh_connected=1
 ssh "${ssh_options[@]}" -- "$ssh_target" \
-  "mkdir -p '$vps_path' '$quadlet_dir' '$remote_build_context'"
+  "mkdir -p '$vps_path' '$quadlet_dir'"
+remote_arch="$(ssh "${ssh_options[@]}" -- "$ssh_target" uname -m)"
+if [[ -z "$target_platform" ]]; then
+  case "$remote_arch" in
+    x86_64|amd64)
+      target_platform='linux/amd64'
+      ;;
+    aarch64|arm64)
+      target_platform='linux/arm64'
+      ;;
+    *)
+      printf 'Unsupported VPS architecture: %s. Set DEPLOY_TARGET_PLATFORM explicitly.\n' "$remote_arch" >&2
+      exit 1
+      ;;
+  esac
+fi
+printf 'Building the release image in Docker Sandbox (%s for VPS %s)...\n' "$target_platform" "$remote_arch"
+(
+  cd -- "$project_dir"
+  jk-sbx-project exec docker buildx build \
+    --pull \
+    --platform "$target_platform" \
+    --tag "$release_image" \
+    --load \
+    --file Containerfile \
+    .
+  jk-sbx-project exec docker save --output .iamjk-site-release.tar "$release_image"
+)
+printf 'Transferring the locally built release image with rsync...\n'
+rsync --archive --human-readable --itemize-changes --info=progress2 --partial --timeout=60 \
+  -e "ssh ${ssh_options[*]}" \
+  "$release_archive" "$ssh_target:$remote_release_archive"
 printf 'Installing/updating the application Quadlet with rsync...\n'
 rsync --archive --human-readable --itemize-changes \
   -e "ssh ${ssh_options[*]}" \
@@ -350,32 +385,8 @@ if ! host_header_present || ! site_policy_state; then
 fi
 REMOTE_CADDY_PATCH
 fi
-printf 'Synchronizing the sanitized native build context with rsync...\n'
-rsync --archive --delete --human-readable --itemize-changes --info=progress2 --partial --timeout=60 \
-  --exclude='.agents/' \
-  --exclude='.codex/' \
-  --exclude='.git/' \
-  --exclude='.openai/' \
-  --exclude='.serena/' \
-  --exclude='.ssh/' \
-  --exclude='.deploy-vps.conf' \
-  --exclude='skills-lock.json' \
-  --exclude='.env*' \
-  --exclude='id_*' \
-  --exclude='*.crt' \
-  --exclude='*.key' \
-  --exclude='*.pem' \
-  --exclude='*.p12' \
-  --exclude='*.pfx' \
-  --exclude='dist/' \
-  --exclude='node_modules/' \
-  -e "ssh ${ssh_options[*]}" \
-  "$project_dir/" "$ssh_target:$remote_build_context/"
-remote_arch="$(ssh "${ssh_options[@]}" -- "$ssh_target" uname -m)"
-printf 'Building the release image natively on the VPS (%s)...\n' "$remote_arch"
 ssh "${ssh_options[@]}" -- "$ssh_target" \
-  "podman build --pull=missing --tag '$release_image' --file '$remote_build_context/Containerfile' '$remote_build_context' && systemctl --user daemon-reload && systemctl --user restart iamjk-site.service"
-
+  "podman load --input '$remote_release_archive' >/dev/null && systemctl --user daemon-reload && systemctl --user restart iamjk-site.service"
 printf 'Checking the running application container...\n'
 if [[ -z "$app_container_name" ]]; then
   app_container_name="$(ssh "${ssh_options[@]}" -- "$ssh_target" \

@@ -21,6 +21,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@astrojs/node": "^11.1.0"
+    "@astrojs/node": "^11.1.0",
+    "gsap": "3.15.0"
   }
 }

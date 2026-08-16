@@ -7,23 +7,23 @@ export const prerender = true;
 const turnstileSiteKey = "0x4AAAAAAEKbOwoKL91JuE3n";
 
 const strengths = [
-  ["01", "Maximizer", "I keep asking how a good thing could become a better one."],
-  ["02", "Connectedness", "I notice the threads between people, ideas, systems, and the bigger picture."],
-  ["03", "Input", "I collect books, notes, tools, questions, and anything worth returning to."],
-  ["04", "Belief", "Clear values make decisions steadier, especially when things get complicated."],
-  ["05", "Individualization", "I pay attention to what makes a person distinct and what helps them do their best work."],
+  ["01", "Maximizer", "I keep asking how a good thing could get better."],
+  ["02", "Connectedness", "I notice the threads connecting people, ideas, systems, and the bigger picture."],
+  ["03", "Input", "I collect books, notes, tools, questions, and anything worth coming back to."],
+  ["04", "Belief", "Clear values help me make steadier decisions when things get complicated."],
+  ["05", "Individualization", "I pay attention to what makes each person distinct and helps them do their best work."],
 ];
 
 const interests = [
-  { number: "01", title: "Faith", className: "faith", body: "I grew up Catholic, then became an evangelical born-again Christian in 2016. Around 2020 I went deeper into theology, and by 2022–2023 I had embraced a Reformed, Calvinist lens." },
-  { number: "02", title: "Language", className: "language", body: "I’ve taught online English since 2019, with a practical, conversational bias. I care about pronunciation, clear writing, and the moment a learner can finally say the thing." },
-  { number: "03", title: "Systems", className: "systems", body: "Linux, browsers, phones, networks, containers, and the satisfying moment when the logs explain what happened. I like systems I can inspect, change, break, and recover." },
-  { number: "04", title: "Ideas", className: "ideas", body: "Physics, mathematics, computer science, neuroscience, history, theology, psychology, and films that leave a door open in your mind." },
+  { number: "01", title: "Faith", className: "faith", body: "I grew up Catholic and became an evangelical born-again Christian in 2016. Around 2020, I went deeper into theology. By 2022 to 2023, I had embraced a Reformed, Calvinist lens." },
+  { number: "02", title: "Language", className: "language", body: "I’ve taught English online since 2019, with a practical, conversational approach. I care about pronunciation, clear writing, and the moment a learner can finally say the thing." },
+  { number: "03", title: "Systems", className: "systems", body: "Linux, browsers, phones, networks, containers, and that satisfying moment when the logs explain what happened. I like systems I can inspect, change, break, and recover." },
+  { number: "04", title: "Ideas", className: "ideas", body: "I keep coming back to physics, mathematics, computer science, neuroscience, history, theology, psychology, and films that leave a door open in your mind." },
 ];
 
 const siteUrl = "https://iamjk.site";
 const pageTitle = "JK de Guzman | A personal field guide";
-const pageDescription = "A personal field guide to JK de Guzman: faith, language, systems, reading, technology, and the questions behind how things work.";
+const pageDescription = "A personal field guide to JK de Guzman, covering faith, language, systems, reading, technology, and the questions behind how things work.";
 ---
 <!doctype html>
 <html lang="en-US">
@@ -39,16 +39,17 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
     <meta property="og:type" content="website" />
     <meta property="og:url" content={siteUrl} />
     <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content="Faith, language, technology, books, and the questions JK keeps coming back to." />
+    <meta property="og:description" content="Faith, language, technology, books, and the questions JK keeps returning to." />
     <meta property="og:site_name" content="iamjk.site" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={pageTitle} />
-    <meta name="twitter:description" content="Faith, language, technology, books, and the questions JK keeps coming back to." />
+    <meta name="twitter:description" content="Faith, language, technology, books, and the questions JK keeps returning to." />
     <title>{pageTitle}</title>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <canvas class="world-canvas" aria-hidden="true"></canvas>
+    <span class="scroll-progress" data-scroll-progress aria-hidden="true"></span>
     <div class="world-readout" aria-hidden="true">
       <span class="world-readout-kicker">LIVE FIELD / <span data-world-index>01</span></span>
       <strong data-world-label>PERSON</strong>
@@ -61,12 +62,17 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           <span class="brand-mark">JK</span>
           <span class="brand-name">Juan Karlo de Guzman</span>
         </a>
-        <nav class="site-nav" aria-label="Primary navigation">
-          <a href="#about">About</a>
-          <a class="nav-hide-mobile" href="#interests">Interests</a>
-          <a class="nav-hide-mobile" href="#field-notes">Field notes</a>
-          <a href="#stack">Stack</a>
-          <a class="nav-cta" href="#contact">Say hello <span aria-hidden="true">↗</span></a>
+        <nav class="site-nav" aria-label="Primary navigation" data-nav-rail>
+          <div class="site-nav-track">
+            <a href="#about">About</a>
+            <a href="#interests">Interests</a>
+            <a href="#field-notes">Field notes</a>
+            <a href="#stack">Stack</a>
+            <a href="#strengths">Strengths</a>
+            <a href="#details">Details</a>
+            <a class="nav-cta" href="#contact">Say hello <span aria-hidden="true">↗</span></a>
+          </div>
+          <span class="nav-scroll-cue" aria-hidden="true">More <span>→</span></span>
         </nav>
       </header>
 
@@ -74,7 +80,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <div class="hero-copy" data-reveal="hero-copy">
           <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Personal field guide / Philippines</p>
           <h1 id="hero-title">A person is a <em>collection</em> of connections.</h1>
-          <p class="hero-deck">I’m JK. I teach, troubleshoot, read, build, and keep following the threads between things.</p>
+          <p class="hero-deck">I’m JK. I teach, troubleshoot, read, build, and follow the threads between things.</p>
           <div class="hero-actions">
             <a class="primary-link" href="#about">Start here <span aria-hidden="true">↓</span></a>
             <a class="quiet-link" href="#stack">See the current stack <span aria-hidden="true">↗</span></a>
@@ -102,13 +108,13 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <div class="hero-footer" aria-hidden="true">
           <span>SCROLL TO EXPLORE</span>
           <span class="hero-line"></span>
-          <span>001 / 007</span>
+          <span>001 / 008</span>
         </div>
       </section>
 
-      <section id="about" class="about section-frame" data-world-section="faith" data-world-index="01" data-world-readout="ABOUT" data-world-detail="A LITTLE CONTEXT" aria-labelledby="about-title">
+      <section id="about" class="about section-frame" data-world-section="faith" data-world-index="02" data-world-readout="ABOUT" data-world-detail="A LITTLE CONTEXT" aria-labelledby="about-title">
         <div class="section-intro">
-          <p class="section-index">01 / About</p>
+          <p class="section-index">02 / About</p>
           <p class="section-note">A little context</p>
         </div>
         <div class="section-scene section-scene-faith" aria-hidden="true">
@@ -118,9 +124,9 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           <h2 id="about-title">Hello, I’m <em>JK.</em></h2>
           <div class="about-copy readable-zone">
             <p class="lead-copy">I’m Juan Karlo de Guzman, usually just JK. I’m from the Philippines, and I move between technology, communication, education, operations, theology, and design.</p>
-            <p>I’m drawn to things with layers. A Linux system. A difficult paragraph. A church tradition. A person’s particular way of seeing the world. I like taking something apart carefully, understanding what each piece does, then putting it back together so it is clearer and more useful.</p>
-            <p>I’m an only child, comfortable with quiet, and usually need some of it after a lot of social energy. That does not mean I’m disconnected. I care about people, but I also like the room a good question creates.</p>
-            <p>English and Filipino are part of my daily life, and Taglish is never far away. I teach English with a practical, conversational bias. I care about confidence, pronunciation, and the moment a learner realizes they can say the thing they were trying to say.</p>
+            <p>I’m drawn to things with layers: a Linux system, a difficult paragraph, a church tradition, or a person’s particular way of seeing the world. I like taking things apart carefully, understanding what each piece does, and putting them back together so they are clearer and more useful.</p>
+            <p>I’m an only child and comfortable with quiet. After a lot of social energy, I usually need some of it. That does not mean I’m disconnected. I care about people, but I also like the space a good question creates.</p>
+            <p>English and Filipino are part of my daily life, and Taglish is never far away. I teach English with a practical, conversational approach. I care about confidence, pronunciation, and the moment a learner can finally say what they mean.</p>
           </div>
         </div>
         <div class="about-facts readable-zone" data-reveal="about-facts" aria-label="A few facts about JK">
@@ -131,14 +137,14 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="interests" class="interests section-frame" data-world-section="language" data-world-index="02" data-world-readout="INTERESTS" data-world-detail="THE RECURRING SUBJECTS" aria-labelledby="interests-title">
+      <section id="interests" class="interests section-frame" data-world-section="language" data-world-index="03" data-world-readout="INTERESTS" data-world-detail="THE RECURRING SUBJECTS" aria-labelledby="interests-title">
         <div class="section-intro">
-          <p class="section-index">02 / Interests</p>
+          <p class="section-index">03 / Interests</p>
           <p class="section-note">The recurring subjects</p>
         </div>
         <div class="section-heading-row" data-reveal="interest-heading">
           <h2 id="interests-title">The things I <em>come back to.</em></h2>
-          <p class="readable-zone">Not a finished list. More like a map of the questions that keep opening into other questions.</p>
+          <p class="readable-zone">This is not a finished list. It is more like a map of questions that keep opening into other questions.</p>
         </div>
         <div class="section-scene section-scene-language" aria-hidden="true">
           <span class="scene-wave scene-wave-one"></span><span class="scene-wave scene-wave-two"></span><span class="scene-wave scene-wave-three"></span><span class="scene-node scene-node-language"></span>
@@ -156,9 +162,9 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="field-notes" class="field-notes section-frame" data-world-section="systems" data-world-index="03" data-world-readout="FIELD NOTES" data-world-detail="HOW I TEND TO WORK" aria-labelledby="field-notes-title">
+      <section id="field-notes" class="field-notes section-frame" data-world-section="systems" data-world-index="04" data-world-readout="FIELD NOTES" data-world-detail="HOW I TEND TO WORK" aria-labelledby="field-notes-title">
         <div class="section-intro">
-          <p class="section-index">03 / Field notes</p>
+          <p class="section-index">04 / Field notes</p>
           <p class="section-note">How I tend to work</p>
         </div>
         <div class="section-scene section-scene-systems" aria-hidden="true">
@@ -167,9 +173,9 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <div class="notes-grid" data-reveal="notes-grid">
           <div class="readable-zone">
             <h2 id="field-notes-title">I learn by <em>getting my hands on it.</em></h2>
-            <p class="notes-lede">Deploy it. Test the assumption. Read the logs. Find the boundary. Fix the underlying thing. Document what happened.</p>
-            <p>That loop works for infrastructure, a new browser, a teaching material, a design system, or a question I cannot stop thinking about. I prefer evidence to confident-sounding guesses, and I like explanations that survive contact with the real world.</p>
-            <p>The habit started early: Windows 95, the Registry, batch files, hardware, then PHP, HTML, and MySQL. I still want to know what is happening underneath the interface.</p>
+            <p class="notes-lede">I deploy it, test the assumption, read the logs, find the boundary, fix the underlying thing, and document what happened.</p>
+            <p>That loop works for infrastructure, a new browser, teaching material, a design system, or a question I cannot stop thinking about. I prefer evidence to confident-sounding guesses and explanations that hold up in the real world.</p>
+            <p>The habit started early with Windows 95, the Registry, batch files, and hardware, then moved into PHP, HTML, and MySQL. I still want to know what is happening under the interface.</p>
           </div>
           <ol class="process-list readable-zone" data-reveal="process-list" aria-label="JK’s learning loop">
             <li data-reveal="process-item"><span>01</span><strong>See the whole system</strong><small>What is connected to what?</small></li>
@@ -180,9 +186,9 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="stack" class="stack-section section-frame" data-world-section="technology" data-world-index="04" data-world-readout="STACK" data-world-detail="THE TOOLS AROUND THE QUESTIONS" aria-labelledby="stack-title">
+      <section id="stack" class="stack-section section-frame" data-world-section="technology" data-world-index="05" data-world-readout="STACK" data-world-detail="THE TOOLS AROUND THE QUESTIONS" aria-labelledby="stack-title">
         <div class="section-intro">
-          <p class="section-index">04 / Current stack</p>
+          <p class="section-index">05 / Current stack</p>
           <p class="section-note">The tools around the questions</p>
         </div>
         <div class="section-scene section-scene-technology" aria-hidden="true">
@@ -192,14 +198,14 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           <div class="stack-copy readable-zone">
             <h2 id="stack-title">I got tired of things <em>just working.</em></h2>
             <p class="stack-lede">I want to know why they work, what depends on what, and what happens when they break.</p>
-            <p>I was an Apple fanboy from 2013 onward. The ecosystem was polished, reliable, and increasingly closed. In May 2026, I moved toward Nothing Technology with a Nothing Phone (3) and CMF Buds Pro 2. It feels more open, more curious, and more like a system I can inspect.</p>
-            <p>My current Mac mini on macOS is still home base. I’m looking forward to a new laptop and mini PC running CachyOS and Fedora Kinoite with KDE. I like Podman, Termius, and tools that let me see the layers instead of hiding them. The real preference is not a platform. It is control with enough convenience to keep the work moving.</p>
+            <p>I was an Apple fanboy from 2013 onward. The ecosystem was polished and reliable, but increasingly closed. In May 2026, I moved toward Nothing Technology with a Nothing Phone (3) and CMF Buds Pro 2. It feels more open, more curious, and more like a system I can inspect.</p>
+            <p>My current Mac mini on macOS is still home base. I’m looking forward to a new laptop and mini PC running CachyOS and Fedora Kinoite with KDE. I like Podman, Termius, and tools that show me the layers instead of hiding them. I care about control with enough convenience to keep the work moving, more than I care about any one platform.</p>
             <div class="stack-tags" aria-label="JK’s technology interests">
               <span>Nothing Phone (3)</span><span>CMF Buds Pro 2</span><span>CachyOS</span><span>Fedora Kinoite</span><span>KDE</span><span>Podman</span><span>Termius</span>
             </div>
           </div>
           <div class="stack-terminal" aria-hidden="true">
-            <div class="stack-terminal-head"><span>FIELD NOTE 04</span><span>LIVE / SYSTEMS</span></div>
+            <div class="stack-terminal-head"><span>FIELD NOTE 05</span><span>LIVE / SYSTEMS</span></div>
             <div class="stack-terminal-body">
               <div class="terminal-pulse"></div>
               <div class="terminal-grid"></div>
@@ -216,15 +222,15 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <div class="stack-trace" data-reveal="stack-trace" aria-label="A simple map of JK’s current technology direction">
           <div class="stack-trace-step"><span>01</span><strong>Polished ecosystem</strong><small>Useful, but increasingly opaque.</small></div>
           <span class="trace-line" aria-hidden="true"></span>
-          <div class="stack-trace-step"><span>02</span><strong>Curious hardware</strong><small>Try the layer. Notice the tradeoffs.</small></div>
+          <div class="stack-trace-step"><span>02</span><strong>Curious hardware</strong><small>Try the layer and notice the tradeoffs.</small></div>
           <span class="trace-line" aria-hidden="true"></span>
           <div class="stack-trace-step"><span>03</span><strong>Inspectable systems</strong><small>Linux, KDE, logs, reasons.</small></div>
         </div>
       </section>
 
-      <section id="strengths" class="strengths section-frame" data-world-section="ideas" data-world-index="05" data-world-readout="FIVE SIGNALS" data-world-detail="CLIFTONSTRENGTHS / TOP FIVE" aria-labelledby="strengths-title">
+      <section id="strengths" class="strengths section-frame" data-world-section="ideas" data-world-index="06" data-world-readout="FIVE SIGNALS" data-world-detail="CLIFTONSTRENGTHS / TOP FIVE" aria-labelledby="strengths-title">
         <div class="section-intro">
-          <p class="section-index">05 / Five signals</p>
+          <p class="section-index">06 / Five signals</p>
           <p class="section-note">CliftonStrengths · top five</p>
         </div>
         <div class="section-heading-row" data-reveal="strength-heading">
@@ -246,9 +252,9 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         </div>
       </section>
 
-      <section id="details" class="details section-frame" data-world-section="detail" data-world-index="06" data-world-readout="SMALL DETAILS" data-world-detail="THE TEXTURE AROUND THE EDGES" aria-labelledby="details-title">
+      <section id="details" class="details section-frame" data-world-section="detail" data-world-index="07" data-world-readout="SMALL DETAILS" data-world-detail="THE TEXTURE AROUND THE EDGES" aria-labelledby="details-title">
         <div class="section-intro">
-          <p class="section-index">06 / Small details</p>
+          <p class="section-index">07 / Small details</p>
           <p class="section-note">The texture around the edges</p>
         </div>
         <div class="section-scene section-scene-detail" aria-hidden="true">
@@ -258,31 +264,31 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           <h2 id="details-title">A few things that make me <em>me.</em></h2>
           <div class="detail-columns">
             <ul class="readable-zone">
-              <li data-reveal="detail-item">Left-handed. Usually carrying a black 0.4 or 0.5 mm gel pen.</li>
-              <li data-reveal="detail-item">Drawn to modern, rounded typography and careful spacing.</li>
-              <li data-reveal="detail-item">Fond of early internet nostalgia, Netscape-era computing, and the Windows 95 years that started the rabbit hole.</li>
-              <li data-reveal="detail-item">Likes privacy tools, browser-engine rabbit holes, and hardware comparisons.</li>
+              <li data-reveal="detail-item">I’m left-handed and usually carry a black 0.4 or 0.5 mm gel pen.</li>
+              <li data-reveal="detail-item">I’m drawn to modern, rounded typography and careful spacing.</li>
+              <li data-reveal="detail-item">I’m fond of early internet nostalgia, Netscape-era computing, and the Windows 95 years that started the rabbit hole.</li>
+              <li data-reveal="detail-item">I like privacy tools, browser-engine rabbit holes, and hardware comparisons.</li>
             </ul>
             <ul class="readable-zone">
-              <li data-reveal="detail-item">Reads theology, psychology, science, philosophy, history, and whatever makes me pause.</li>
-              <li data-reveal="detail-item">Keeps a Kindle Oasis nearby, still enjoys a paper pad, and returns to books with hidden structure.</li>
-              <li data-reveal="detail-item">Favorite worlds include <em>Interstellar</em>, <em>Dark</em>, <em>Touch</em>, <em>Inception</em>, and <em>Angels &amp; Demons</em>.</li>
-              <li data-reveal="detail-item">Believes AI should assist people, not erase the value of human work.</li>
+              <li data-reveal="detail-item">I read theology, psychology, science, philosophy, history, and whatever makes me pause.</li>
+              <li data-reveal="detail-item">I keep a Kindle Oasis nearby, still enjoy a paper pad, and return to books with hidden structure.</li>
+              <li data-reveal="detail-item">My favorite worlds include <em>Interstellar</em>, <em>Dark</em>, <em>Touch</em>, <em>Inception</em>, and <em>Angels &amp; Demons</em>.</li>
+              <li data-reveal="detail-item">I believe AI should assist people, not erase the value of human work.</li>
             </ul>
           </div>
         </div>
       </section>
 
-      <section id="contact" class="contact section-frame" data-world-section="contact" data-world-index="07" data-world-readout="CONTACT" data-world-detail="FOLLOW THE TRAIL" aria-labelledby="contact-title">
-        <p class="section-index" data-reveal="contact-index">07 / Contact</p>
+      <section id="contact" class="contact section-frame" data-world-section="contact" data-world-index="08" data-world-readout="CONTACT" data-world-detail="FOLLOW THE TRAIL" aria-labelledby="contact-title">
+        <p class="section-index" data-reveal="contact-index">08 / Contact</p>
         <div class="section-scene section-scene-contact" aria-hidden="true">
           <span class="scene-signal scene-signal-one"></span><span class="scene-signal scene-signal-two"></span><span class="scene-signal scene-signal-three"></span><span class="scene-signal-node"></span>
         </div>
         <h2 id="contact-title" data-reveal="contact-title">If you’d like to keep the conversation going, <em>say hello.</em></h2>
         <div class="contact-layout" data-reveal="contact-copy">
           <div class="contact-intro readable-zone">
-            <p class="contact-copy">Tell me a little about what’s on your mind. Email and mobile are optional, but I’ll need one if you’d like a reply.</p>
-            <p class="contact-privacy">I’ll use what you share only to read your message and reply. Please leave out passwords, payment details, government IDs, and private medical information.</p>
+            <p class="contact-copy">Tell me a little about what’s on your mind. Email and mobile are optional, but I’ll need one if you want a reply.</p>
+            <p class="contact-privacy">I’ll use what you share only to read your message and reply. Please do not include passwords, payment details, government IDs, or private medical information.</p>
           </div>
           <form class="contact-form" action="/api/contact" method="post" aria-describedby="contact-form-status">
             <div class="contact-form-grid">
@@ -292,10 +298,13 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
               </label>
               <label>
                 <span>Country or territory <b aria-hidden="true">*</b></span>
-                <select name="country" autocomplete="country-name" required>
-                  <option value="">Select your country</option>
-            {countries.map(({ code, name }) => <option value={code}>{name}</option>)}
-                </select>
+                <span class="select-wrap">
+                  <select name="country" autocomplete="country-name" required>
+                    <option value="">Select your country or territory</option>
+                    {countries.map(({ code, name }) => <option value={code}>{name}</option>)}
+                  </select>
+                  <span class="select-arrow" aria-hidden="true">⌄</span>
+                </span>
               </label>
               <label>
                 <span>Email <small>(optional)</small></span>
@@ -311,11 +320,11 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
               <span>Message <b aria-hidden="true">*</b></span>
               <textarea name="message" rows="7" required maxlength="5000"></textarea>
             </label>
-            <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="turnstile-spin-v2" data-theme="dark" data-size="flexible"></div>
+            <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="turnstile-spin-v2" data-theme="dark" data-size="flexible" data-callback="iamjkTurnstileReady" data-expired-callback="iamjkTurnstileExpired" data-error-callback="iamjkTurnstileError"></div>
             <input name="startedAt" type="hidden" data-contact-started />
             <input class="contact-trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
             <div class="contact-form-footer">
-              <p class="contact-consent">I’ll use these details only to review your message and reply.</p>
+              <p class="contact-consent">I’ll use these details only to read your message and reply.</p>
               <button class="primary-link contact-submit" type="submit">
                 <span data-contact-submit-label>Send message</span>
                 <span aria-hidden="true">↗</span>
@@ -332,22 +341,74 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         <a href="#top">Back to top ↑</a>
       </footer>
     </main>
+    <script is:inline>
+      window.__iamjkTurnstileState = { state: "loading" };
+      window.iamjkTurnstileReady = (token) => {
+        window.__iamjkTurnstileState = { state: "ready", token };
+        document.dispatchEvent(new CustomEvent("iamjk:turnstile-ready", { detail: token }));
+      };
+      window.iamjkTurnstileExpired = () => {
+        window.__iamjkTurnstileState = { state: "expired" };
+        document.dispatchEvent(new CustomEvent("iamjk:turnstile-expired"));
+      };
+      window.iamjkTurnstileError = () => {
+        window.__iamjkTurnstileState = { state: "error" };
+        document.dispatchEvent(new CustomEvent("iamjk:turnstile-error"));
+      };
+    </script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer is:inline></script>
     <script>
+      import { gsap } from "gsap";
+      import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+      gsap.registerPlugin(ScrollTrigger);
       document.documentElement.classList.add("js-ready");
       const contactForm = document.querySelector<HTMLFormElement>(".contact-form");
       const contactStatus = document.querySelector<HTMLElement>(".contact-status");
       const contactStarted = contactForm?.querySelector<HTMLInputElement>("[data-contact-started]");
       const contactSubmitLabel = contactForm?.querySelector<HTMLElement>("[data-contact-submit-label]");
+      const contactSubmit = contactForm?.querySelector<HTMLButtonElement>("button[type=submit]");
+      const turnstileWidget = contactForm?.querySelector<HTMLElement>(".cf-turnstile");
       const defaultContactSubmitLabel = contactSubmitLabel?.textContent || "Send message";
+      type TurnstileState = "loading" | "ready" | "expired" | "error";
+      const turnstileWindow = window as Window & {
+        iamjkTurnstileReady?: (token: string) => void;
+        iamjkTurnstileExpired?: () => void;
+        iamjkTurnstileError?: () => void;
+        __iamjkTurnstileState?: { state: TurnstileState; token?: string };
+      };
+      let turnstileState: TurnstileState = turnstileWidget ? turnstileWindow.__iamjkTurnstileState?.state || "loading" : "ready";
+
+      const emitTurnstileEvent = (name: string, token = "") => {
+        document.dispatchEvent(new CustomEvent(`iamjk:turnstile-${name}`, { detail: token }));
+      };
+      turnstileWindow.iamjkTurnstileReady = (token) => {
+        turnstileWindow.__iamjkTurnstileState = { state: "ready", token };
+        emitTurnstileEvent("ready", token);
+      };
+      turnstileWindow.iamjkTurnstileExpired = () => {
+        turnstileWindow.__iamjkTurnstileState = { state: "expired" };
+        emitTurnstileEvent("expired");
+      };
+      turnstileWindow.iamjkTurnstileError = () => {
+        turnstileWindow.__iamjkTurnstileState = { state: "error" };
+        emitTurnstileEvent("error");
+      };
       if (contactStarted) contactStarted.value = String(Date.now());
-      const setContactBusy = (busy: boolean) => {
-        const submitButton = contactForm?.querySelector<HTMLButtonElement>("button[type=submit]");
-        contactForm?.setAttribute("aria-busy", String(busy));
-        if (submitButton) {
-          submitButton.disabled = busy;
-          submitButton.setAttribute("aria-busy", String(busy));
+      const updateContactSubmitState = () => {
+        const busy = contactForm?.getAttribute("aria-busy") === "true";
+        const waitingForTurnstile = Boolean(turnstileWidget && turnstileState !== "ready");
+        if (contactSubmit) {
+          contactSubmit.disabled = busy || waitingForTurnstile;
+          contactSubmit.setAttribute("aria-disabled", String(contactSubmit.disabled));
         }
+      };
+      const setContactBusy = (busy: boolean) => {
+        contactForm?.setAttribute("aria-busy", String(busy));
+        if (contactSubmit) {
+          contactSubmit.setAttribute("aria-busy", String(busy));
+        }
+        updateContactSubmitState();
         if (contactSubmitLabel) contactSubmitLabel.textContent = busy ? "Sending…" : defaultContactSubmitLabel;
       };
       const announceContactStatus = (className: string, message: string, moveFocus = false) => {
@@ -356,6 +417,27 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         contactStatus.textContent = message;
         if (moveFocus) contactStatus.focus({ preventScroll: true });
       };
+      const setTurnstileState = (state: TurnstileState, message = "") => {
+        turnstileState = state;
+        contactForm?.setAttribute("data-turnstile-state", state);
+        updateContactSubmitState();
+        if (message) announceContactStatus(state === "error" || state === "expired" ? "is-error" : "is-pending", message);
+      };
+      document.addEventListener("iamjk:turnstile-ready", () => {
+        const wasWaiting = contactStatus?.textContent?.startsWith("Secure check") === true;
+        setTurnstileState("ready");
+        if (wasWaiting) announceContactStatus("", "");
+      });
+      document.addEventListener("iamjk:turnstile-expired", () => {
+        setTurnstileState("expired", "Secure check expired. Complete it again to send your message.");
+      });
+      document.addEventListener("iamjk:turnstile-error", () => {
+        setTurnstileState("error", "Secure check unavailable. Refresh it, then try again.");
+      });
+      if (turnstileWidget) {
+        const initialState = turnstileWindow.__iamjkTurnstileState?.state || "loading";
+        setTurnstileState(initialState, initialState === "loading" ? "Loading secure check…" : "");
+      }
       contactForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!contactStatus) return;
@@ -363,7 +445,11 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           contactForm.reportValidity();
           return;
         }
-        announceContactStatus("is-pending", "Checking that everything looks good…");
+        if (turnstileWidget && turnstileState !== "ready") {
+          announceContactStatus(turnstileState === "error" || turnstileState === "expired" ? "is-error" : "is-pending", turnstileState === "loading" ? "Secure check is still loading. Please wait a moment." : "Complete the secure check before sending.");
+          return;
+        }
+        announceContactStatus("is-pending", "Checking your message…");
         setContactBusy(true);
         try {
           const response = await fetch(contactForm.action, {
@@ -372,14 +458,16 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
             headers: { Accept: "application/json", "Content-Type": "application/json" },
           });
           const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.message || "I couldn’t send that just now. Please try again in a moment.");
+          if (!response.ok) throw new Error(result.message || "I couldn’t send your message. Please try again in a moment.");
           contactForm.reset();
           if (contactStarted) contactStarted.value = String(Date.now());
-          announceContactStatus("is-success", "Thanks — your message is on its way.", true);
+          announceContactStatus("is-success", "Thanks. Your message is on its way.", true);
           window.turnstile?.reset();
+          setTurnstileState("loading");
         } catch (error) {
-          announceContactStatus("is-error", error instanceof Error ? error.message : "I couldn’t send that just now. Please try again in a moment.", true);
+          announceContactStatus("is-error", error instanceof Error ? error.message : "I couldn’t send your message. Please try again in a moment.", true);
           window.turnstile?.reset();
+          setTurnstileState("loading");
         } finally {
           setContactBusy(false);
         }
@@ -400,6 +488,72 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
         revealTargets.forEach(revealTarget);
       }
 
+      const scrollProgress = document.querySelector<HTMLElement>("[data-scroll-progress]");
+      const navRail = document.querySelector<HTMLElement>("[data-nav-rail]");
+      const navTrack = navRail?.querySelector<HTMLElement>(".site-nav-track");
+      const navScrollCue = navRail?.querySelector<HTMLElement>(".nav-scroll-cue");
+      const updateNavScrollCue = () => {
+        if (!navTrack || !navScrollCue) return;
+        const hasMore = navTrack.scrollWidth - navTrack.clientWidth - navTrack.scrollLeft > 4;
+        navScrollCue.toggleAttribute("data-hidden", !hasMore);
+      };
+      navTrack?.addEventListener("scroll", updateNavScrollCue, { passive: true });
+      window.addEventListener("resize", updateNavScrollCue, { passive: true });
+      updateNavScrollCue();
+      const gsapMedia = gsap.matchMedia();
+      gsapMedia.add({
+        reduceMotion: "(prefers-reduced-motion: reduce)",
+        finePointer: "(hover: hover) and (pointer: fine)",
+      }, (context) => {
+        const { reduceMotion, finePointer } = context.conditions as { reduceMotion: boolean; finePointer: boolean };
+        const navItems = gsap.utils.toArray<HTMLElement>(".brand, .site-nav a");
+
+        if (reduceMotion) {
+          gsap.set(navItems, { clearProps: "all" });
+        } else {
+          gsap.fromTo(navItems, { autoAlpha: 0, y: -8 }, {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.42,
+            stagger: 0.035,
+            ease: "power3.out",
+            clearProps: "transform,opacity",
+          });
+        }
+
+        if (scrollProgress) {
+          ScrollTrigger.create({
+            start: 0,
+            end: "max",
+            onUpdate: (trigger) => gsap.set(scrollProgress, { scaleX: trigger.progress }),
+          });
+        }
+
+        if (!finePointer || !navRail) return undefined;
+        const glowPosition = { x: 50, y: 50 };
+        const updateGlowPosition = () => {
+          navRail.style.setProperty("--nav-glow-x", `${glowPosition.x}%`);
+          navRail.style.setProperty("--nav-glow-y", `${glowPosition.y}%`);
+        };
+        const moveGlowX = gsap.quickTo(glowPosition, "x", { duration: 0.25, ease: "power3.out", onUpdate: updateGlowPosition });
+        const moveGlowY = gsap.quickTo(glowPosition, "y", { duration: 0.25, ease: "power3.out", onUpdate: updateGlowPosition });
+        const onNavPointerMove = (event: PointerEvent) => {
+          const bounds = navRail.getBoundingClientRect();
+          moveGlowX(((event.clientX - bounds.left) / bounds.width) * 100);
+          moveGlowY(((event.clientY - bounds.top) / bounds.height) * 100);
+        };
+        const onNavPointerLeave = () => {
+          moveGlowX(50);
+          moveGlowY(50);
+        };
+        navRail.addEventListener("pointermove", onNavPointerMove, { passive: true });
+        navRail.addEventListener("pointerleave", onNavPointerLeave, { passive: true });
+        return () => {
+          navRail.removeEventListener("pointermove", onNavPointerMove);
+          navRail.removeEventListener("pointerleave", onNavPointerLeave);
+        };
+      });
+
       const canvas = document.querySelector<HTMLCanvasElement>(".world-canvas");
       const readoutIndex = document.querySelector<HTMLElement>("[data-world-index]");
       const readoutLabel = document.querySelector<HTMLElement>("[data-world-label]");
@@ -418,7 +572,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
 
       const context = canvas?.getContext("2d");
       const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-world-section]"));
-      const navLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(".site-nav a[href^='#']"));
+      const navLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(".site-nav a[href^='#'], .brand[href='#top']"));
       let activeSectionIndex = 0;
       const updateNavState = () => {
         const activeId = sections[activeSectionIndex]?.id;
@@ -429,6 +583,7 @@ const pageDescription = "A personal field guide to JK de Guzman: faith, language
           else link.removeAttribute("aria-current");
         });
       };
+      updateNavState();
       if (canvas && context) {
         document.querySelector<HTMLElement>(".signal-wrap")?.classList.add("is-enhanced");
         let width = 0;
