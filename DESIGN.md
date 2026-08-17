@@ -51,6 +51,7 @@ The source of truth is `app/globals.css`. Keep these values aligned with the imp
 | `--paper` | `#f4f1eb` | primary text |
 | `--paper-soft` | `#cdd4cf` | body copy |
 | `--muted` | `#98a29c` | secondary text |
+| `--muted-dark` | `#8a9890` | metadata, section notes, and footer copy (WCAG compliant) |
 | `--line` | `rgba(241, 238, 232, 0.16)` | quiet borders and separators |
 | `--line-strong` | `rgba(241, 238, 232, 0.34)` | readable borders and focus |
 | `--accent` | `#c8844a` | warm amber/rust emphasis |

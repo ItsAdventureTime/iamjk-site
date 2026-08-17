@@ -292,33 +292,33 @@ const pageDescription = "A personal field guide to JK de Guzman, covering faith,
           </div>
           <form class="contact-form" action="/api/contact" method="post" aria-describedby="contact-form-status">
             <div class="contact-form-grid">
-              <label>
+              <label for="contact-name">
                 <span>Name or nickname <b aria-hidden="true">*</b></span>
-                <input name="name" type="text" autocomplete="name" required maxlength="80" />
+                <input id="contact-name" name="name" type="text" autocomplete="name" required maxlength="80" />
               </label>
-              <label>
+              <label for="contact-country">
                 <span>Country or territory <b aria-hidden="true">*</b></span>
                 <span class="select-wrap">
-                  <select name="country" autocomplete="country-name" required>
+                  <select id="contact-country" name="country" autocomplete="country-name" required>
                     <option value="">Select your country or territory</option>
                     {countries.map(({ code, name }) => <option value={code}>{name}</option>)}
                   </select>
                   <span class="select-arrow" aria-hidden="true">⌄</span>
                 </span>
               </label>
-              <label>
+              <label for="contact-email">
                 <span>Email <small>(optional)</small></span>
-                <input name="email" type="email" autocomplete="email" maxlength="254" aria-describedby="reply-note" />
+                <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" aria-describedby="reply-note" />
               </label>
-              <label>
+              <label for="contact-mobile">
                 <span>Mobile number <small>(optional)</small></span>
-                <input name="mobile" type="tel" autocomplete="tel" maxlength="32" aria-describedby="reply-note" />
+                <input id="contact-mobile" name="mobile" type="tel" autocomplete="tel" maxlength="32" aria-describedby="reply-note" />
               </label>
             </div>
             <p id="reply-note" class="contact-field-note">Want a reply? Leave an email or mobile number.</p>
-            <label>
+            <label for="contact-message">
               <span>Message <b aria-hidden="true">*</b></span>
-              <textarea name="message" rows="7" required maxlength="5000"></textarea>
+              <textarea id="contact-message" name="message" rows="7" required maxlength="5000"></textarea>
             </label>
             <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="turnstile-spin-v2" data-theme="dark" data-size="flexible" data-callback="iamjkTurnstileReady" data-expired-callback="iamjkTurnstileExpired" data-error-callback="iamjkTurnstileError"></div>
             <input name="startedAt" type="hidden" data-contact-started />
