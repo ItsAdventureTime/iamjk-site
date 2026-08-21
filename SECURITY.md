@@ -1,6 +1,6 @@
 # Security and privacy guide
 
-**Reviewed:** 2026-08-16
+**Reviewed:** 2026-08-22
 **Scope:** public iamjk.site source, contact endpoint, container runtime, and Git release workflow
 
 The 2026-08-08 personal-context review informs the public copy. Only the
@@ -177,7 +177,7 @@ signature verification or to publish an unsigned commit.
 
 ## Signing key handling
 
-The current macOS checkout has a legacy 1Password SSH signer configuration, but
+The current macOS checkout has an SSH-based 1Password signer configuration, but
 SSH signing is not the normal release path under the project’s HTTPS-only,
 no-SSH-key policy. Do not invoke that signer for a release. Configure an
 approved non-SSH signer, such as GPG or S/MIME, and register its public key with

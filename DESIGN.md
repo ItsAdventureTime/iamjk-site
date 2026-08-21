@@ -1,7 +1,7 @@
 # iamjk.site design guide
 
 **Status:** implementation reference for the current site
-**Reviewed:** 2026-08-16
+**Reviewed:** 2026-08-22
 **Audience:** future content, visual, and implementation changes
 
 iamjk.site is a personal field guide for Juan Karlo “JK” de Guzman. It is deliberately personal rather than a work portfolio: visitors should meet a person through his faith, language, systems curiosity, technology shifts, books, ideas, and practical way of learning.
@@ -60,7 +60,7 @@ The source of truth is `app/globals.css`. Keep these values aligned with the imp
 | `--rust` | `#b5795f` | secondary signal details |
 | `--sage` | `#8d9d86` | tertiary signal details |
 
-Typography uses the broadly available Arial/Helvetica system stack for display and body text, with a monospace stack for labels and metadata. Do not add a remote font dependency without a clear performance and visual reason.
+Typography uses an Avenir Next/Helvetica Neue/Arial sans-serif stack for body text, Georgia/Times New Roman for display headings, and a monospace stack for labels and metadata. Do not add a remote font dependency without a clear performance and visual reason.
 
 ## Layout and section map
 
@@ -159,7 +159,7 @@ Keep animations short, interruptible, and subordinate to reading. Use transforms
 - Avoid relying on experimental `animation-timeline` features or browser-specific prefixes.
 - The source is designed for Blink, WebKit, and Gecko from a standards baseline. Direct local rendering should be verified in an available browser; actual Firefox, Safari, and Chromium runs should be added to CI when those engines are available.
 - Use WCAG 2.2 as the accessibility reference, especially contrast, reflow, focus visibility, and animation from interaction.
-- Keep Astro’s static output and canonical site configuration aligned with the official configuration reference.
+- Keep Astro’s server output, standalone Node adapter, and canonical site configuration aligned with the official configuration reference.
 
 ## Current standards review
 
@@ -185,7 +185,7 @@ standards baseline without adding a UI framework or client-side routing:
   preserve source-order reading flow, and give primary touch targets at least
   44px of usable height where the layout permits. The primary navigation and
   “Say hello” CTA use a 48px minimum height in the current implementation.
-- **Astro baseline:** keep static output and the existing Node adapter; do not
+- **Astro baseline:** keep server output with the standalone Node adapter; do not
   adopt View Transitions or another animation layer unless the page gains
   multi-route navigation and the accessibility behavior is tested.
 
@@ -209,7 +209,7 @@ Before accepting a visual change:
 
 1. Run `jk-sbx-project ensure` and verify `jk-sbx-project exec ./scripts/sandbox-node.sh node --version` reports Node 24.18.0.
 2. Run `jk-sbx-project exec ./scripts/sandbox-node.sh --with-pnpm sh -c 'CI=true pnpm install --frozen-lockfile && CI=true pnpm run check && CI=true pnpm test'`.
-3. Confirm `dist/index.html` and `dist/_astro/*.js` are produced.
+3. Confirm `dist/client/index.html` and `dist/client/_astro/*.js` are produced.
 4. Run the source and generated-output privacy scans in `SECURITY.md`.
 5. Check desktop and mobile widths for overflow, clipping, overlap, and unreadable text; verify that every primary navigation control and the “Say hello” CTA share a 48px height, remain discoverable in the mobile rail, and expose a clear overflow cue when needed.
 6. Check keyboard focus, reduced motion, and no-script behavior.
@@ -223,5 +223,5 @@ The implementation is intentionally small:
 
 - `src/pages/index.astro`: page structure, content, canvas script, and metadata.
 - `app/globals.css`: tokens, layout, responsive rules, motifs, motion, and contrast surfaces.
-- `astro.config.mjs`: static output and canonical site URL.
+- `astro.config.mjs`: server output, standalone Node adapter, and canonical site URL.
 - `tests/rendered-html.test.mjs`: build-output and design invariant checks.

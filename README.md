@@ -268,7 +268,7 @@ after confirming its tag and configuration on the VPS.
 
 ### Current deployment baseline
 
-Reviewed 2026-08-16 against the current official guidance:
+Reviewed 2026-08-22 against the current official guidance:
 
 - Node 24 remains the production line because it is an LTS release; do not
   switch the image to a Current or EOL line without a compatibility review.

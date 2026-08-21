@@ -1,6 +1,6 @@
 # Normal update and release workflow
 
-**Reviewed:** 2026-08-16
+**Reviewed:** 2026-08-22
 **Scope:** source, content, dependencies, configuration, documentation, GitHub, and VPS releases
 
 This is the normal workflow after every project update. Keep the code change,
@@ -90,12 +90,11 @@ cryptographic signing method.
 
 ### Current signing readiness
 
-As of 2026-08-16, this workspace has an SSH-based 1Password signer configured
-but no local GPG installation or registered GitHub GPG key. Because the project
-norm excludes SSH keys for this workflow, signed publishing is blocked until an
-approved non-SSH signer is configured and its public key is registered with the
-matching GitHub account. Never create an unsigned release to work around this
-state.
+As of 2026-08-22, this workspace has an SSH-based 1Password signer configured
+but no local GPG or S/MIME signer. Because the project norm excludes SSH keys
+for this workflow, signed publishing is blocked until an approved non-SSH signer
+is configured and its public key is registered with the matching GitHub account.
+Never create an unsigned release to work around this state.
 
 ## 5. Publish and verify the remote commit
 
